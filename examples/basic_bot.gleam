@@ -1,6 +1,6 @@
 import gleam/io
 import shimmer
-import shimmer.{on_message, on_ready}
+import shimmer.{connect, on_message, on_ready}
 
 pub fn main() {
   let handlers =
@@ -11,5 +11,5 @@ pub fn main() {
 
   let client =
     shimmer.Client(token: "<TOKEN>", handlers: handlers)
-    |> discord.connect()
+    |> connect()
 }
