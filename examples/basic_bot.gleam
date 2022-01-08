@@ -1,11 +1,3 @@
-# Shimmer
-
-A Gleam library for interacting with the Discord API
-
-
-## Basic Example
-
-```gleam
 import gleam/io
 import shimmer
 import shimmer.{on_message, on_ready}
@@ -21,4 +13,3 @@ pub fn main() {
     shimmer.Client(token: "<TOKEN>", handlers: handlers)
     |> discord.connect()
 }
-```

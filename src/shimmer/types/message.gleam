@@ -1,0 +1,3 @@
+pub type Message {
+  Message
+}
