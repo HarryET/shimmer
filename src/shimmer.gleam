@@ -1,5 +1,4 @@
 import gleam/option.{None, Option, Some}
-import gleam/function
 import shimmer/types/message.{Message}
 
 pub type HandlersBuilder {
