@@ -1,4 +1,4 @@
-import gleam/http.{Method,Request}
+import gleam/http.{Method, Request}
 import gleam/string
 
 pub fn new(method: Method, path: String) -> Request(String) {
@@ -9,7 +9,14 @@ pub fn new(method: Method, path: String) -> Request(String) {
   |> http.prepend_req_header("accept", "application/json")
 }
 
-pub fn new_with_auth(method: Method, path: String, token: String) -> Request(String) {
+pub fn new_with_auth(
+  method: Method,
+  path: String,
+  token: String,
+) -> Request(String) {
   new(method, path)
-  |> http.prepend_req_header("authorization", string.append(to: "Bot ", suffix: token))
+  |> http.prepend_req_header(
+    "authorization",
+    string.append(to: "Bot ", suffix: token),
+  )
 }
