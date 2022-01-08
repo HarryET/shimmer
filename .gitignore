@@ -2,4 +2,4 @@
 *.ez
 build
 erl_crash.dump
-src/shimmer.gleam
+test/bot_test.gleam
