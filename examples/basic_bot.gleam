@@ -10,6 +10,8 @@ pub fn main() {
     |> shimmer.handlers_from_builder
 
   let client =
-    shimmer.Client(token: "<TOKEN>", handlers: handlers)
+    shimmer.new("<TOKEN>", 0, handlers)
     |> connect()
+
+  erlang.sleep_forever()
 }

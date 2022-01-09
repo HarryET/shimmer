@@ -10,6 +10,7 @@ gleam_stdlib = "~> 0.18"
 gleam_hackney = "~> 0.1"
 gleam_json = "~> 0.2"
 nerf = "~> 0.1"
+gleam_otp = "~> 0.3"
 
 [dev-dependencies]
 gleeunit = "~> 0.5"

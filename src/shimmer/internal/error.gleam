@@ -6,6 +6,6 @@ pub type ShimmerError {
   UnknownAccount
   InvalidJson(json.DecodeError)
   InvalidFormat(dynamic.DecodeError)
-  InvalidWsPacketFormat
+  WebsocketError(Nil)
   HttpError(hackney.Error)
 }
