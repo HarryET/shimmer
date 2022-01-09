@@ -2,7 +2,6 @@
 
 A Gleam library for interacting with the Discord API
 
-
 ## Basic Example
 
 ```gleam
@@ -22,3 +21,7 @@ pub fn main() {
     |> discord.connect()
 }
 ```
+
+## Notes
+
+- Currently, we bundle [nerf](https://github.com/lpil/nerf), this will be removed once this [pull request](https://github.com/lpil/nerf/pull/1) is merged.
