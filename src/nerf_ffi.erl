@@ -3,7 +3,8 @@
 -export([ws_receive/2, ws_await_upgrade/2, ws_open/2]).
 
 % TODO: make the protocols a param that can be specified in gleam
-ws_open(Host, Port) -> gun:open(Host, Port, #{protocols => [http]}).
+ws_open(Host, Port) -> 
+    gun:open(Host, Port, #{protocols => [http]}).
 
 ws_receive({connection, Ref, Pid}, Timeout)
     when is_reference(Ref) andalso is_pid(Pid) ->

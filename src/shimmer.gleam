@@ -5,6 +5,7 @@ import gleam/erlang
 import gleam/result
 import gleam/option.{None, Option, Some}
 import gleam/int
+import gleam/otp/process
 import shimmer/types/message.{Message}
 import shimmer/ws/event_loop.{websocket_actor}
 import shimmer/ws/ws_utils.{open_gateway}
@@ -52,7 +53,7 @@ pub fn handlers_from_builder(builder: HandlersBuilder) -> Handlers {
   )
 }
 
-pub fn connect(client: Client) -> Nil {
+pub fn connect(_client: Client) -> Nil {
   websocket_actor()
   Nil
 }
@@ -61,12 +62,11 @@ pub fn main() {
   let handlers =
     handlers_builder()
     |> on_ready(fn() { io.print("Ready") })
-    |> on_message(fn(message) { io.print("Message Recieved!") })
+    |> on_message(fn(message) { Nil })
     |> handlers_from_builder
 
-  let client =
-    new("TOKEN", 0, handlers)
-    |> connect
+  new("TOKEN", 0, handlers)
+  |> connect
 
   erlang.sleep_forever()
 }
