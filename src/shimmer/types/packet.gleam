@@ -23,23 +23,23 @@ pub fn from_json_string(encoded: String) -> Result(Packet, error.ShimmerError) {
         Ok(seq) ->
           case dynamic.int(seq) {
             Ok(seq) -> Some(seq)
-            Error(error) -> None
+            Error(_error) -> None
           }
-        Error(error) -> None
+        Error(_error) -> None
       }
 
       let name = case dynamic.field(data, "t") {
         Ok(t) ->
           case dynamic.string(t) {
             Ok(t) -> Some(t)
-            Error(error) -> None
+            Error(_error) -> None
           }
-        Error(error) -> None
+        Error(_error) -> None
       }
 
       let data = case dynamic.field(data, "d") {
         Ok(d) -> Some(d)
-        Error(error) -> None
+        Error(_error) -> None
       }
 
       Ok(Packet(op: op_code, s: sequence, t: name, d: data))

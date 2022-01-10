@@ -1,8 +1,6 @@
 import gleam/io
-import gleam/otp/process.{
-  Sender, bare_message_receiver, map_receiver, merge_receiver,
-}
-import gleam/otp/actor.{Continue, Ready, Spec, StartError}
+import gleam/string
+import gleam/otp/process.{Sender, map_receiver}
 import gleam/option.{Some}
 import gleam/dynamic.{Dynamic}
 import shimmer/ws/ws_utils
@@ -11,63 +9,64 @@ import gleam/order.{Gt, Order}
 import nerf/websocket.{Connection}
 
 pub type Message {
-  Bare(Dynamic)
   HeartbeatNow
+  Frame(String)
 }
 
 pub type State {
-  State(
-    self_sender: Sender(Message),
-    heartbeat_interval: Int,
-    sequence: Int,
-    conn: Connection,
-  )
+  State(heartbeat_interval: Int, sequence: Int, conn: Connection)
 }
 
-pub fn websocket_actor() -> Result(Sender(Message), StartError) {
-  let init = fn() {
-    let #(heartbeat_sender, heartbeat_reciever) = process.new_channel()
-    process.send(heartbeat_sender, HeartbeatNow)
+fn init() {
+  assert Ok(conn) = ws_utils.open_gateway()
 
-    assert Ok(conn) = ws_utils.open_gateway()
+  // Send a message in the future to trigger the next heartbeat
+  erlang_send_after(0, HeartbeatNow, process.self())
 
-    let bare_reciever = bare_message_receiver()
-    let mapped_bare_reciever =
-      map_receiver(bare_reciever, fn(msg) { Bare(msg) })
+  State(heartbeat_interval: 41250, sequence: -1, conn: conn)
+}
 
-    Ready(
-      State(
-        self_sender: heartbeat_sender,
-        heartbeat_interval: 41250,
-        sequence: -1,
-        conn: conn,
-      ),
-      Some(merge_receiver(heartbeat_reciever, mapped_bare_reciever)),
-    )
+fn heartbeat(state: State) -> State {
+  // Send a message in the future to trigger the next heartbeat
+  erlang_send_after(state.heartbeat_interval, HeartbeatNow, process.self())
+
+  case int.compare(state.sequence, -1) {
+    Gt -> ws_utils.gateway_heartbeat(state.sequence, state.conn)
+    _ -> ws_utils.gateway_heartbeat_null(state.conn)
   }
+  state
+}
 
-  let loop = fn(msg: Message, state: State) {
-    case msg {
-      HeartbeatNow -> {
-        // Send a message to itself in the future
-        process.send_after(
-          state.self_sender,
-          state.heartbeat_interval,
-          HeartbeatNow,
-        )
-        case int.compare(state.sequence, -1) {
-          Gt -> ws_utils.gateway_heartbeat(state.sequence, state.conn)
-          _ -> ws_utils.gateway_heartbeat_null(state.conn)
-        }
-      }
+fn handle_frame(frame: String, state: State) -> State {
+  "Got frame: "
+  |> string.append(frame)
+  |> io.println
+  state
+}
 
-      Bare(packet) -> io.println("Packet?!")
-    }
-
-    // We're done, await the next message
-    Continue(state)
+fn handle_message(msg: Message, state: State) -> State {
+  case msg {
+    HeartbeatNow -> heartbeat(state)
+    Frame(frame) -> handle_frame(frame, state)
   }
+}
 
+// conn: Connection,
+pub fn websocket_actor() -> Result(process.Pid, Dynamic) {
   // Start the actor
-  actor.start_spec(Spec(init: init, loop: loop, init_timeout: 50))
+  start_erlang_event_loop(Spec(init: init, handle_message: handle_message))
 }
+
+pub type Spec {
+  Spec(init: fn() -> State, handle_message: fn(Message, State) -> State)
+}
+
+external fn start_erlang_event_loop(Spec) -> Result(process.Pid, Dynamic) =
+  "shimmer_event_loop" "start_link"
+
+external fn erlang_send_after(
+  Int,
+  Message,
+  process.Pid,
+) -> Result(process.Pid, Dynamic) =
+  "erlang" "send_after"
