@@ -47,18 +47,18 @@ fn handle_hello(packet: Packet, data: HelloEvent, state: State) -> State {
     "Heartbeat Interval is: "
     |> string.append(int.to_string(data.heartbeat_interval)),
   )
-  erlang_send_after(1, HeartbeatNow, process.self())
+  // ? Start Hearbeats
+  erlang_send_after(0, HeartbeatNow, process.self())
+
+  // Send Identify Payload
   ws_utils.gateway_identify(
     state.identify_info.token,
     state.identify_info.intents,
     state.conn,
   )
-  State(
-    sequence: state.sequence,
-    heartbeat_interval: data.heartbeat_interval,
-    conn: state.conn,
-    identify_info: state.identify_info,
-  )
+
+  // Return state with new heartbeat interval.
+  State(..state, heartbeat_interval: data.heartbeat_interval)
 }
 
 fn handle_frame(frame: String, state: State) -> State {
@@ -86,7 +86,13 @@ fn handle_frame(frame: String, state: State) -> State {
           state
         }
       }
-    Error(_error) -> state
+    Error(_error) -> {
+      io.println(
+        "Invalid Packet "
+        |> string.append(frame),
+      )
+      state
+    }
   }
 }
 

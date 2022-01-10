@@ -61,11 +61,7 @@ pub fn main() {
     |> on_message(fn(message) { Nil })
     |> handlers_from_builder
 
-  Client(
-    token: "OTI5MzU5MDY5NjQ1NTI1MDAy.YdmLFA.CrNxYeAyzxtmB9Ljb94CteZFZgA",
-    intents: 0,
-    handlers: handlers,
-  )
+  Client(token: "TOKEN", intents: 0, handlers: handlers)
   |> connect
 
   erlang.sleep_forever()
