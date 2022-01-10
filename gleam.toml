@@ -9,8 +9,11 @@ repository = { type = "github", user = "HarryET", repo = "shimmer" }
 gleam_stdlib = "~> 0.18"
 gleam_hackney = "~> 0.1"
 gleam_json = "~> 0.2"
-nerf = "~> 0.1"
+gun = "> 1.3.0 and < 3.0.0"
+gleam_http = "~> 2.1"
+certifi = "~> 2.8"
 gleam_otp = "~> 0.3"
+gleam_erlang = "~> 0.6"
 
 [dev-dependencies]
 gleeunit = "~> 0.5"

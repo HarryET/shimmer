@@ -1,5 +1,5 @@
 import gleam/json
-import gleam/dynamic
+import gleam/dynamic.{Dynamic}
 import gleam/result
 import shimmer/internal/error
 
