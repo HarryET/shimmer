@@ -15,14 +15,17 @@ pub type Message {
   Frame(String)
 }
 
-pub type State {
-  State(heartbeat_interval: Int, sequence: Int, conn: Connection)
+pub type IdentifyInfo {
+  IdentifyInfo(token: String, intents: Int)
 }
 
-fn init() {
-  assert Ok(conn) = ws_utils.open_gateway()
-
-  State(heartbeat_interval: 41250, sequence: -1, conn: conn)
+pub type State {
+  State(
+    heartbeat_interval: Int,
+    sequence: Int,
+    conn: Connection,
+    identify_info: IdentifyInfo,
+  )
 }
 
 // TODO fix, not being run.
@@ -45,10 +48,16 @@ fn handle_hello(packet: Packet, data: HelloEvent, state: State) -> State {
     |> string.append(int.to_string(data.heartbeat_interval)),
   )
   erlang_send_after(1, HeartbeatNow, process.self())
+  ws_utils.gateway_identify(
+    state.identify_info.token,
+    state.identify_info.intents,
+    state.conn,
+  )
   State(
     sequence: state.sequence,
     heartbeat_interval: data.heartbeat_interval,
     conn: state.conn,
+    identify_info: state.identify_info,
   )
 }
 
@@ -89,9 +98,23 @@ fn handle_message(msg: Message, state: State) -> State {
 }
 
 // conn: Connection,
-pub fn websocket_actor() -> Result(process.Pid, Dynamic) {
+pub fn websocket_actor(
+  identify_info: IdentifyInfo,
+) -> Result(process.Pid, Dynamic) {
   // Start the actor
-  start_erlang_event_loop(Spec(init: init, handle_message: handle_message))
+  start_erlang_event_loop(Spec(
+    init: fn() {
+      assert Ok(conn) = ws_utils.open_gateway()
+
+      State(
+        heartbeat_interval: 41250,
+        sequence: -1,
+        conn: conn,
+        identify_info: identify_info,
+      )
+    },
+    handle_message: handle_message,
+  ))
 }
 
 pub type Spec {

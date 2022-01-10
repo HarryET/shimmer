@@ -7,7 +7,7 @@ import gleam/option.{None, Option, Some}
 import gleam/int
 import gleam/otp/process
 import shimmer/types/message.{Message}
-import shimmer/ws/event_loop.{websocket_actor}
+import shimmer/ws/event_loop.{IdentifyInfo, websocket_actor}
 import shimmer/ws/ws_utils.{open_gateway}
 
 pub type HandlersBuilder {
@@ -22,11 +22,7 @@ pub type Handlers {
 }
 
 pub type Client {
-  Client(token: String, handlers: Handlers, sequence: Int, intents: Int)
-}
-
-pub fn new(token: String, intents: Int, handlers: Handlers) -> Client {
-  Client(token: token, handlers: handlers, sequence: 0, intents: intents)
+  Client(token: String, handlers: Handlers, intents: Int)
 }
 
 pub fn handlers_builder() -> HandlersBuilder {
@@ -53,8 +49,8 @@ pub fn handlers_from_builder(builder: HandlersBuilder) -> Handlers {
   )
 }
 
-pub fn connect(_client: Client) -> Nil {
-  websocket_actor()
+pub fn connect(client: Client) -> Nil {
+  websocket_actor(IdentifyInfo(token: client.token, intents: client.intents))
   Nil
 }
 
@@ -65,7 +61,11 @@ pub fn main() {
     |> on_message(fn(message) { Nil })
     |> handlers_from_builder
 
-  new("TOKEN", 0, handlers)
+  Client(
+    token: "OTI5MzU5MDY5NjQ1NTI1MDAy.YdmLFA.CrNxYeAyzxtmB9Ljb94CteZFZgA",
+    intents: 0,
+    handlers: handlers,
+  )
   |> connect
 
   erlang.sleep_forever()

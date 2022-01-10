@@ -6,15 +6,14 @@ A Gleam library for interacting with the Discord API
 
 ```gleam
 import gleam/io
-import gleam/erlang
 import shimmer
 import shimmer.{on_message, on_ready}
 
 pub fn main() {
   let handlers =
-    shimmer.handlers_builder()
+    shimmer.Client(token: "TOKEN", intents: 0, handlers: handlers)
     |> on_ready(fn() { io.print("Ready") })
-    |> on_message(fn(message) { io.print("Message Recieved!") })
+    |> on_message(fn(message) { io.print("Message Received!") })
     |> shimmer.handlers_from_builder
 
   let client =
