@@ -1,12 +1,14 @@
 import gleam/io
 import gleam/string
 import gleam/otp/process.{Sender, map_receiver}
-import gleam/option.{Some}
+import gleam/option.{None, Some}
 import gleam/dynamic.{Dynamic}
 import shimmer/ws/ws_utils
 import gleam/int
 import gleam/order.{Gt, Order}
 import nerf/websocket.{Connection}
+import shimmer/types/hello_event.{HelloEvent}
+import shimmer/types/packet.{Packet}
 
 pub type Message {
   HeartbeatNow
@@ -20,15 +22,15 @@ pub type State {
 fn init() {
   assert Ok(conn) = ws_utils.open_gateway()
 
-  // Send a message in the future to trigger the next heartbeat
-  erlang_send_after(0, HeartbeatNow, process.self())
-
   State(heartbeat_interval: 41250, sequence: -1, conn: conn)
 }
 
+// TODO fix, not being run.
 fn heartbeat(state: State) -> State {
   // Send a message in the future to trigger the next heartbeat
   erlang_send_after(state.heartbeat_interval, HeartbeatNow, process.self())
+
+  io.println("Heartbeat.")
 
   case int.compare(state.sequence, -1) {
     Gt -> ws_utils.gateway_heartbeat(state.sequence, state.conn)
@@ -37,11 +39,46 @@ fn heartbeat(state: State) -> State {
   state
 }
 
+fn handle_hello(packet: Packet, data: HelloEvent, state: State) -> State {
+  io.println(
+    "Heartbeat Interval is: "
+    |> string.append(int.to_string(data.heartbeat_interval)),
+  )
+  erlang_send_after(1, HeartbeatNow, process.self())
+  State(
+    sequence: state.sequence,
+    heartbeat_interval: data.heartbeat_interval,
+    conn: state.conn,
+  )
+}
+
 fn handle_frame(frame: String, state: State) -> State {
-  "Got frame: "
-  |> string.append(frame)
-  |> io.println
-  state
+  case ws_utils.ws_frame_to_packet(frame) {
+    Ok(packet) ->
+      case packet.op {
+        10 -> {
+          io.println("Hello From Gateway! 👋")
+          case packet.d {
+            Some(packet_data) ->
+              case hello_event.from_dynamic(packet_data) {
+                Ok(hello_data) -> handle_hello(packet, hello_data, state)
+                Error(_error) -> state
+              }
+            None -> state
+          }
+        }
+        _ -> {
+          io.println(
+            "Unknown Packet ["
+            |> string.append(int.to_string(packet.op))
+            |> string.append("] ")
+            |> string.append(frame),
+          )
+          state
+        }
+      }
+    Error(_error) -> state
+  }
 }
 
 fn handle_message(msg: Message, state: State) -> State {

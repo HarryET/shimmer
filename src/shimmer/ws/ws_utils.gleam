@@ -8,23 +8,10 @@ import shimmer/types/packet.{Packet}
 import shimmer/internal/error.{ShimmerError}
 import gleam/erlang/atom
 
-// fn ws_recieve_string(
-//   timeout: Int,
-//   conn: websocket.Connection,
-// ) -> Result(String, ShimmerError) {
-//   try packet_frame =
-//     websocket.receive(conn, timeout)
-//     |> result.map_error(error.WebsocketError)
-//   assert Text(packet_raw) = packet_frame
-//   Ok(packet_raw)
-// }
-// fn ws_recieve_packet(
-//   timeout: Int,
-//   conn: websocket.Connection,
-// ) -> Result(Packet, ShimmerError) {
-//   try string = ws_recieve_string(timeout, conn)
-//   packet.from_json_string(string)
-// }
+pub fn ws_frame_to_packet(frame: String) -> Result(Packet, ShimmerError) {
+  packet.from_json_string(frame)
+}
+
 /// Opens a connection to the gateway.
 pub fn open_gateway() -> Result(websocket.Connection, Nil) {
   assert Ok(conn) =
