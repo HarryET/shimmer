@@ -47,8 +47,6 @@ fn handle_hello(packet: Packet, data: HelloEvent, state: State) -> State {
     "Heartbeat Interval is: "
     |> string.append(int.to_string(data.heartbeat_interval)),
   )
-  // ? Start Hearbeats
-  erlang_send_after(0, HeartbeatNow, process.self())
 
   // Send Identify Payload
   ws_utils.gateway_identify(
@@ -97,6 +95,7 @@ fn handle_frame(frame: String, state: State) -> State {
 }
 
 fn handle_message(msg: Message, state: State) -> State {
+  io.debug(msg)
   case msg {
     HeartbeatNow -> heartbeat(state)
     Frame(frame) -> handle_frame(frame, state)
@@ -111,6 +110,9 @@ pub fn websocket_actor(
   start_erlang_event_loop(Spec(
     init: fn() {
       assert Ok(conn) = ws_utils.open_gateway()
+
+      // ? Start Heartbeats
+      erlang_send_after(0, HeartbeatNow, process.self())
 
       State(
         heartbeat_interval: 41250,
