@@ -28,7 +28,7 @@ handle_cast(_Msg, State) ->
 
 handle_info(Msg, State) ->
     #state{gleam_state = GleamState, handle_message = HandleMessage} = State,
-    NewState = case Msg of
+    NewGleamState = case Msg of
         heartbeat_now ->
             HandleMessage(Msg, GleamState);
 
@@ -38,4 +38,4 @@ handle_info(Msg, State) ->
         _ -> 
             error({unexpected_event_loop_message, Msg})
     end,
-    {noreply, NewState}.
+    {noreply, State#state{gleam_state = NewGleamState}}.
