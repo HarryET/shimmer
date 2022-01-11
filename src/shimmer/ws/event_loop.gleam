@@ -75,6 +75,7 @@ fn handle_frame(frame: String, state: State) -> State {
             None -> state
           }
         }
+        11 -> state
         _ -> {
           io.println(
             "Unknown Packet ["
