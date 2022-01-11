@@ -26,13 +26,11 @@ pub fn gateway_heartbeat(sequence: Int, conn: websocket.Connection) {
       "{\"op\": 1, \"d\": ",
       string.append(int.to_string(sequence), "}"),
     )
-  io.println("Beat.")
   websocket.send(conn, payload)
 }
 
 pub fn gateway_heartbeat_null(conn: websocket.Connection) {
   let payload = "{\"op\": 1, \"d\": null}"
-  io.println("Beat.")
   websocket.send(conn, payload)
 }
 
@@ -43,6 +41,7 @@ pub fn gateway_identify(token: String, intents: Int, conn: websocket.Connection)
     |> string.append(token)
     |> string.append("\",\"intents\":")
     |> string.append(int.to_string(intents))
+    // TODO don't hardcode the OS, make it dynamic ya know
     |> string.append(
       ",\"properties\":{\"$os\":\"macos\",\"$browser\":\"shimmer\",\"$device\":\"shimmer\"}}}",
     )

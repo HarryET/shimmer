@@ -31,9 +31,7 @@ pub type State {
 // TODO fix, not being run.
 fn heartbeat(state: State) -> State {
   // Send a message in the future to trigger the next heartbeat
-  erlang_send_after(state.heartbeat_interval, HeartbeatNow, process.self())
-
-  io.println("Heartbeat.")
+  erlang_send_after(state.heartbeat_interval, process.self(), HeartbeatNow)
 
   case int.compare(state.sequence, -1) {
     Gt -> ws_utils.gateway_heartbeat(state.sequence, state.conn)
@@ -47,6 +45,9 @@ fn handle_hello(packet: Packet, data: HelloEvent, state: State) -> State {
     "Heartbeat Interval is: "
     |> string.append(int.to_string(data.heartbeat_interval)),
   )
+
+  // ? Start Heartbeats
+  erlang_send_after(0, process.self(), HeartbeatNow)
 
   // Send Identify Payload
   ws_utils.gateway_identify(
@@ -95,7 +96,6 @@ fn handle_frame(frame: String, state: State) -> State {
 }
 
 fn handle_message(msg: Message, state: State) -> State {
-  io.debug(msg)
   case msg {
     HeartbeatNow -> heartbeat(state)
     Frame(frame) -> handle_frame(frame, state)
@@ -110,9 +110,6 @@ pub fn websocket_actor(
   start_erlang_event_loop(Spec(
     init: fn() {
       assert Ok(conn) = ws_utils.open_gateway()
-
-      // ? Start Heartbeats
-      erlang_send_after(0, HeartbeatNow, process.self())
 
       State(
         heartbeat_interval: 41250,
@@ -134,7 +131,7 @@ external fn start_erlang_event_loop(Spec) -> Result(process.Pid, Dynamic) =
 
 external fn erlang_send_after(
   Int,
-  Message,
   process.Pid,
+  Message,
 ) -> Result(process.Pid, Dynamic) =
   "erlang" "send_after"
