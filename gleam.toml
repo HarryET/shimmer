@@ -1,5 +1,5 @@
 name = "shimmer"
-version = "0.0.1"
+version = "0.0.2"
 
 licences = ["Apache-2.0"]
 description = "A Gleam library for interacting with the Discord API"
@@ -8,7 +8,7 @@ repository = { type = "github", user = "HarryET", repo = "shimmer" }
 [dependencies]
 gleam_stdlib = "~> 0.18"
 gleam_hackney = "~> 0.1"
-gleam_json = "~> 0.2"
+gleam_json = "<= 0.2"
 gun = "> 1.3.0 and < 3.0.0"
 gleam_http = "~> 2.1"
 certifi = "~> 2.8"
