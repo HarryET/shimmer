@@ -1,14 +1,15 @@
 import gleam/io
 import gleam/string
-import gleam/otp/process.{Sender, map_receiver}
 import gleam/option.{None, Some}
 import gleam/dynamic.{Dynamic}
 import shimmer/ws/ws_utils
 import gleam/int
-import gleam/order.{Gt, Order}
+import gleam/order.{Gt}
 import nerf/websocket.{Connection}
-import shimmer/types/hello_event.{HelloEvent}
-import shimmer/types/packet.{Packet}
+import shimmer/ws/packets/hello_packet.{HelloPacketData}
+import shimmer/ws/packets/ready_packet.{ReadyPacketData}
+import shimmer/ws/packet.{Packet}
+import gleam/otp/process
 
 pub type Message {
   HeartbeatNow
@@ -40,7 +41,7 @@ fn heartbeat(state: State) -> State {
   state
 }
 
-fn handle_hello(packet: Packet, data: HelloEvent, state: State) -> State {
+fn handle_hello(_packet: Packet, data: HelloPacketData, state: State) -> State {
   // ? Start Heartbeats
   erlang_send_after(0, process.self(), HeartbeatNow)
 
@@ -55,30 +56,45 @@ fn handle_hello(packet: Packet, data: HelloEvent, state: State) -> State {
   State(..state, heartbeat_interval: data.heartbeat_interval)
 }
 
+fn handle_ready(_packet: Packet, _data: ReadyPacketData, state: State) -> State {
+  io.println("READY!")
+  state
+}
+
 fn handle_frame(frame: String, state: State) -> State {
   case ws_utils.ws_frame_to_packet(frame) {
     Ok(packet) ->
       case packet.op {
         0 ->
           case packet.t {
-            Some(event) -> {
+            Some(event) ->
               case event {
-                e ->
+                "READY" ->
+                  case packet.d {
+                    Some(packet_data) ->
+                      case ready_packet.from_dynamic(packet_data) {
+                        Ok(ready_data) ->
+                          handle_ready(packet, ready_data, state)
+                        Error(_error) -> state
+                      }
+                    None -> state
+                  }
+                e -> {
                   io.println(
                     "Unknown Event: "
                     |> string.append(e),
                   )
+                  state
+                }
               }
-              state
-            }
             None -> state
           }
         10 ->
           case packet.d {
             Some(packet_data) ->
-              case hello_event.from_dynamic(packet_data) {
+              case hello_packet.from_dynamic(packet_data) {
                 Ok(hello_data) -> handle_hello(packet, hello_data, state)
-                Error(_error) -> state
+                Error(error) -> state
               }
             None -> state
           }
@@ -104,6 +120,7 @@ fn handle_frame(frame: String, state: State) -> State {
 }
 
 fn handle_message(msg: Message, state: State) -> State {
+  io.debug(msg)
   case msg {
     HeartbeatNow -> heartbeat(state)
     Frame(frame) -> handle_frame(frame, state)

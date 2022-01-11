@@ -8,7 +8,6 @@ import gleam/int
 import gleam/otp/process
 import shimmer/types/message.{Message}
 import shimmer/ws/event_loop.{IdentifyInfo, websocket_actor}
-import shimmer/ws/ws_utils.{open_gateway}
 
 pub type HandlersBuilder {
   HandlersBuilder(
@@ -50,6 +49,23 @@ pub fn handlers_from_builder(builder: HandlersBuilder) -> Handlers {
 }
 
 pub fn connect(client: Client) -> Nil {
-  websocket_actor(IdentifyInfo(token: client.token, intents: client.intents))
+  assert Ok(_) =
+    websocket_actor(IdentifyInfo(token: client.token, intents: client.intents))
   Nil
+}
+
+pub fn main() {
+  let handlers =
+    handlers_builder()
+    |> on_ready(fn() { io.print("Ready") })
+    |> handlers_from_builder
+
+  Client(
+    token: "OTI5MzU5MDY5NjQ1NTI1MDAy.YdmLFA._2_x99OB1yfqxvvY8DSzoNMJp_Q",
+    intents: 0,
+    handlers: handlers,
+  )
+  |> connect
+
+  erlang.sleep_forever()
 }

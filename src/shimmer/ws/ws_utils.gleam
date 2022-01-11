@@ -1,10 +1,9 @@
 import nerf/websocket
-import nerf/websocket.{Text}
 import gleam/result
 import gleam/string
 import gleam/int
 import gleam/io
-import shimmer/types/packet.{Packet}
+import shimmer/ws/packet.{Packet}
 import shimmer/internal/error.{ShimmerError}
 import gleam/erlang/atom
 

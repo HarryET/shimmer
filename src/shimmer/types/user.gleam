@@ -1,5 +1,5 @@
 import gleam/json
-import gleam/dynamic
+import gleam/dynamic.{bool, field, string}
 import gleam/result
 import shimmer/internal/error
 
@@ -8,32 +8,15 @@ pub type User {
 }
 
 pub fn from_json_string(encoded: String) -> Result(User, error.ShimmerError) {
-  try data =
-    json.decode(encoded)
-    |> result.map_error(error.InvalidJson)
+  let user_decoder =
+    dynamic.decode4(
+      User,
+      field("id", of: string),
+      field("username", of: string),
+      field("discriminator", of: string),
+      field("bot", of: bool),
+    )
 
-  let data = dynamic.from(data)
-  try user =
-    {
-      try id = dynamic.field(data, "id")
-      try id = dynamic.string(id)
-
-      try username = dynamic.field(data, "username")
-      try username = dynamic.string(username)
-
-      try discriminator = dynamic.field(data, "discriminator")
-      try discriminator = dynamic.string(discriminator)
-
-      try is_bot = dynamic.field(data, "bot")
-      try is_bot = dynamic.bool(is_bot)
-      Ok(User(
-        id: id,
-        username: username,
-        discriminator: discriminator,
-        bot: is_bot,
-      ))
-    }
-    |> result.map_error(error.InvalidFormat)
-
-  Ok(user)
+  json.decode(from: encoded, using: user_decoder)
+  |> result.map_error(error.InvalidJson)
 }
