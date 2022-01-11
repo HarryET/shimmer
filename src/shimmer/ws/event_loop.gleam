@@ -41,11 +41,6 @@ fn heartbeat(state: State) -> State {
 }
 
 fn handle_hello(packet: Packet, data: HelloEvent, state: State) -> State {
-  io.println(
-    "Heartbeat Interval is: "
-    |> string.append(int.to_string(data.heartbeat_interval)),
-  )
-
   // ? Start Heartbeats
   erlang_send_after(0, process.self(), HeartbeatNow)
 
@@ -64,8 +59,21 @@ fn handle_frame(frame: String, state: State) -> State {
   case ws_utils.ws_frame_to_packet(frame) {
     Ok(packet) ->
       case packet.op {
-        10 -> {
-          io.println("Hello From Gateway! 👋")
+        0 ->
+          case packet.t {
+            Some(event) -> {
+              case event {
+                e ->
+                  io.println(
+                    "Unknown Event: "
+                    |> string.append(e),
+                  )
+              }
+              state
+            }
+            None -> state
+          }
+        10 ->
           case packet.d {
             Some(packet_data) ->
               case hello_event.from_dynamic(packet_data) {
@@ -74,7 +82,6 @@ fn handle_frame(frame: String, state: State) -> State {
               }
             None -> state
           }
-        }
         11 -> state
         _ -> {
           io.println(
