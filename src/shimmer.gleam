@@ -53,19 +53,3 @@ pub fn connect(client: Client) -> Nil {
     websocket_actor(IdentifyInfo(token: client.token, intents: client.intents))
   Nil
 }
-
-pub fn main() {
-  let handlers =
-    handlers_builder()
-    |> on_ready(fn() { io.print("Ready") })
-    |> handlers_from_builder
-
-  Client(
-    token: "OTI5MzU5MDY5NjQ1NTI1MDAy.YdmLFA._2_x99OB1yfqxvvY8DSzoNMJp_Q",
-    intents: 0,
-    handlers: handlers,
-  )
-  |> connect
-
-  erlang.sleep_forever()
-}
