@@ -10,6 +10,7 @@ import shimmer/ws/packets/hello_packet.{HelloPacketData}
 import shimmer/ws/packets/ready_packet.{ReadyPacketData}
 import shimmer/ws/packet.{Packet}
 import gleam/otp/process
+import shimmer/internal/error.{ShimmerError}
 
 pub type Message {
   HeartbeatNow
@@ -61,6 +62,11 @@ fn handle_ready(_packet: Packet, _data: ReadyPacketData, state: State) -> State 
   state
 }
 
+fn handle_error(error: ShimmerError, state: State) -> State {
+  io.debug(error)
+  state
+}
+
 fn handle_frame(frame: String, state: State) -> State {
   case ws_utils.ws_frame_to_packet(frame) {
     Ok(packet) ->
@@ -75,7 +81,7 @@ fn handle_frame(frame: String, state: State) -> State {
                       case ready_packet.from_dynamic(packet_data) {
                         Ok(ready_data) ->
                           handle_ready(packet, ready_data, state)
-                        Error(_error) -> state
+                        Error(err) -> handle_error(err, state)
                       }
                     None -> state
                   }
@@ -94,7 +100,7 @@ fn handle_frame(frame: String, state: State) -> State {
             Some(packet_data) ->
               case hello_packet.from_dynamic(packet_data) {
                 Ok(hello_data) -> handle_hello(packet, hello_data, state)
-                Error(error) -> state
+                Error(err) -> handle_error(err, state)
               }
             None -> state
           }
@@ -109,18 +115,17 @@ fn handle_frame(frame: String, state: State) -> State {
           state
         }
       }
-    Error(_error) -> {
+    Error(err) -> {
       io.println(
         "Invalid Packet "
         |> string.append(frame),
       )
-      state
+      handle_error(err, state)
     }
   }
 }
 
 fn handle_message(msg: Message, state: State) -> State {
-  io.debug(msg)
   case msg {
     HeartbeatNow -> heartbeat(state)
     Frame(frame) -> handle_frame(frame, state)
