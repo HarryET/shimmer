@@ -10,7 +10,7 @@ pub type HelloPacketData {
 pub fn from_json_string(
   encoded: String,
 ) -> Result(HelloPacketData, error.ShimmerError) {
-  let decoder = dynamic.field("heartbeat_internal", of: dynamic.int)
+  let decoder = dynamic.field("heartbeat_interval", of: dynamic.int)
   try interval =
     json.decode(encoded, decoder)
     |> result.map_error(error.InvalidJson)

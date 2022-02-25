@@ -49,7 +49,7 @@ pub fn handlers_from_builder(builder: HandlersBuilder) -> Handlers {
 }
 
 pub fn connect(client: Client) -> Nil {
-  assert Ok(_) =
+  let _ =
     websocket_actor(IdentifyInfo(token: client.token, intents: client.intents))
   Nil
 }
