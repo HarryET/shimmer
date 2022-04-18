@@ -34,16 +34,7 @@ pub fn gateway_heartbeat_null(conn: websocket.Connection) {
 }
 
 /// Sends an identify packet to the gateway
-pub fn gateway_identify(token: String, intents: Int, conn: websocket.Connection) {
-  let identify_payload =
-    "{\"op\":2,\"d\":{\"token\":\""
-    |> string.append(token)
-    |> string.append("\",\"intents\":")
-    |> string.append(int.to_string(intents))
-    // TODO don't hardcode the OS, make it dynamic ya know
-    |> string.append(
-      ",\"properties\":{\"$os\":\"macos\",\"$browser\":\"shimmer\",\"$device\":\"shimmer\"}}}",
-    )
-
-  websocket.send(conn, identify_payload)
+pub fn gateway_identify(payload: IdentifyPacketData, conn: websocket.Connection) {
+  let identify_packet = Packet(op: 2, s: None, t: None, d: Some(payload))
+  websocket.send(conn, packet.to_json_string(identify_packet))
 }

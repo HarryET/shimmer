@@ -53,3 +53,17 @@ pub fn connect(client: Client) -> Nil {
     websocket_actor(IdentifyInfo(token: client.token, intents: client.intents))
   Nil
 }
+
+pub fn main() {
+  let handlers =
+    handlers_builder()
+    |> on_ready(fn() { io.print("Ready") })
+    |> on_message(fn(message) { io.print("Message Received!") })
+    |> handlers_from_builder
+
+  let client =
+    Client(token: "", handlers: handlers, intents: 513)
+    |> connect
+
+  erlang.sleep_forever()
+}
