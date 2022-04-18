@@ -17,10 +17,6 @@ pub type IdentifyPacketData {
   IdentifyPacketData(token: String, intents: Int, properties: Option(Dynamic))
 }
 
-pub type PurePacket {
-  PurePacket(op: Int, s: Option(Int), t: Option(String))
-}
-
 pub type Packet {
   RawPacket(op: Int, s: Option(Int), t: Option(String), d: Option(Dynamic))
   HelloPacket(op: Int, s: Option(Int), t: Option(String), d: HelloPacketData)
@@ -58,24 +54,14 @@ pub fn get_data_as_json(packet: Packet) -> json.Json {
   }
 }
 
-pub fn to_pure_packet(packet: Packet) -> PurePacket {
-  case packet {
-    IdentifyPacket(op, s, t, _) -> PurePacket(op: op, s: s, t: t)
-    _ -> PurePacket(op: 0, s: None, t: None)
-  }
-}
+pub fn json_string(packet: Packet) -> String {
+  let data = get_data_as_json(packet)
 
-pub fn json_string(
-  op: Int,
-  s: Option(Int),
-  t: Option(String),
-  d: json.Json,
-) -> String {
   json.object([
-    #("op", json.int(op)),
-    #("s", json.nullable(s, of: json.int)),
-    #("t", json.nullable(t, of: json.string)),
-    #("d", d),
+    #("op", json.int(packet.op)),
+    #("s", json.nullable(packet.s, of: json.int)),
+    #("t", json.nullable(packet.t, of: json.string)),
+    #("d", data),
   ])
   |> json.to_string
 }

@@ -4,7 +4,6 @@ import gleam/dynamic
 import gleam/erlang
 import gleam/result
 import gleam/option.{None, Option, Some}
-import gleam/int
 import gleam/otp/process
 import shimmer/types/message.{Message}
 import shimmer/ws/event_loop.{IdentifyInfo, websocket_actor}

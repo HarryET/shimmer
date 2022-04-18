@@ -7,7 +7,7 @@ import gleam/int
 import gleam/order.{Gt}
 import nerf/websocket.{Connection}
 import shimmer/ws/packet.{
-  HelloPacketData, IdentifyPacketData, Packet, ReadyPacketData, to_pure_packet,
+  HelloPacket, HelloPacketData, IdentifyPacketData, Packet, ReadyPacketData,
 }
 import gleam/otp/process
 import shimmer/internal/error.{ShimmerError}
@@ -42,7 +42,7 @@ fn heartbeat(state: State) -> State {
   state
 }
 
-fn handle_hello(_packet: Packet, data: HelloPacketData, state: State) -> State {
+fn handle_hello(data: HelloPacketData, state: State) -> State {
   // ? Start Heartbeats
   erlang_send_after(0, process.self(), HeartbeatNow)
 
@@ -71,7 +71,7 @@ fn handle_error(error: ShimmerError, state: State) -> State {
 }
 
 fn handle_frame(frame: String, state: State) -> State {
-  case ws_utils.ws_frame_to_pure_packet(frame) {
+  case ws_utils.ws_frame_to_packet(frame) {
     Ok(packet) ->
       case packet.op {
         // 0 ->
@@ -99,13 +99,9 @@ fn handle_frame(frame: String, state: State) -> State {
         //     None -> state
         //   }
         10 ->
-          case packet.d {
-            Some(packet_data) ->
-              case hello_packet.from_dynamic(packet_data) {
-                Ok(hello_data) -> handle_hello(packet, hello_data, state)
-                Error(err) -> handle_error(err, state)
-              }
-            None -> state
+          case packet {
+            HelloPacket(d: packet_data, ..) -> handle_hello(packet_data, state)
+            _ -> state
           }
         11 -> state
         _ -> {
