@@ -6,6 +6,8 @@ import gleam/io
 import shimmer/ws/packet.{Packet}
 import shimmer/internal/error.{ShimmerError}
 import gleam/erlang/atom
+import shimmer/ws/packets/identify_packet.{IdentifyPacketData}
+import gleam/option.{None, Some}
 
 pub fn ws_frame_to_packet(frame: String) -> Result(Packet, ShimmerError) {
   packet.from_json_string(frame)
@@ -36,5 +38,5 @@ pub fn gateway_heartbeat_null(conn: websocket.Connection) {
 /// Sends an identify packet to the gateway
 pub fn gateway_identify(payload: IdentifyPacketData, conn: websocket.Connection) {
   let identify_packet = Packet(op: 2, s: None, t: None, d: Some(payload))
-  websocket.send(conn, packet.to_json_string(identify_packet))
+  websocket.send(conn, identify_packet.to_json_string(identify_packet, payload))
 }
