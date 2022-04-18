@@ -7,7 +7,9 @@ pub fn packet_from_json_test() {
       "{\"t\":null,\"s\":null,\"op\":10,\"d\":{\"heartbeat_interval\":41250,\"_trace\":[\"[\\\"gateway-prd-main-ks32\\\",{\\\"micros\\\":0.0}]\"]}}",
     )
 
-  pac.op
+  let pure_pac = packet.to_pure_packet(pac)
+
+  pure_pac.op
   |> should.equal(10)
 
   Ok("Passed!")

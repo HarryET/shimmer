@@ -6,9 +6,9 @@ import shimmer/ws/ws_utils
 import gleam/int
 import gleam/order.{Gt}
 import nerf/websocket.{Connection}
-import shimmer/ws/packets/hello_packet.{HelloPacketData}
-import shimmer/ws/packets/ready_packet.{ReadyPacketData}
-import shimmer/ws/packet.{Packet}
+import shimmer/ws/packet.{
+  HelloPacketData, IdentifyPacketData, Packet, ReadyPacketData, to_pure_packet,
+}
 import gleam/otp/process
 import shimmer/internal/error.{ShimmerError}
 
@@ -48,8 +48,11 @@ fn handle_hello(_packet: Packet, data: HelloPacketData, state: State) -> State {
 
   // Send Identify Payload
   ws_utils.gateway_identify(
-    state.identify_info.token,
-    state.identify_info.intents,
+    IdentifyPacketData(
+      token: state.identify_info.token,
+      intents: state.identify_info.intents,
+      properties: None,
+    ),
     state.conn,
   )
 
@@ -68,33 +71,33 @@ fn handle_error(error: ShimmerError, state: State) -> State {
 }
 
 fn handle_frame(frame: String, state: State) -> State {
-  case ws_utils.ws_frame_to_packet(frame) {
+  case ws_utils.ws_frame_to_pure_packet(frame) {
     Ok(packet) ->
       case packet.op {
-        0 ->
-          case packet.t {
-            Some(event) ->
-              case event {
-                "READY" ->
-                  case packet.d {
-                    Some(packet_data) ->
-                      case ready_packet.from_dynamic(packet_data) {
-                        Ok(ready_data) ->
-                          handle_ready(packet, ready_data, state)
-                        Error(err) -> handle_error(err, state)
-                      }
-                    None -> state
-                  }
-                e -> {
-                  io.println(
-                    "Unknown Event: "
-                    |> string.append(e),
-                  )
-                  state
-                }
-              }
-            None -> state
-          }
+        // 0 ->
+        //   case packet.t {
+        //     Some(event) ->
+        //       case event {
+        //         "READY" ->
+        //           case packet.d {
+        //             Some(packet_data) ->
+        //               case ready_packet.from_dynamic(packet_data) {
+        //                 Ok(ready_data) ->
+        //                   handle_ready(packet, ready_data, state)
+        //                 Error(err) -> handle_error(err, state)
+        //               }
+        //             None -> state
+        //           }
+        //         e -> {
+        //           io.println(
+        //             "Unknown Event: "
+        //             |> string.append(e),
+        //           )
+        //           state
+        //         }
+        //       }
+        //     None -> state
+        //   }
         10 ->
           case packet.d {
             Some(packet_data) ->
