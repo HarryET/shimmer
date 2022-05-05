@@ -33,7 +33,8 @@ pub type State {
 // TODO fix, not being run.
 fn heartbeat(state: State) -> State {
   // Send a message in the future to trigger the next heartbeat
-  erlang_send_after(state.heartbeat_interval, process.self(), HeartbeatNow)
+  let _ =
+    erlang_send_after(state.heartbeat_interval, process.self(), HeartbeatNow)
 
   case int.compare(state.sequence, -1) {
     Gt -> ws_utils.gateway_heartbeat(state.sequence, state.conn)
@@ -44,7 +45,7 @@ fn heartbeat(state: State) -> State {
 
 fn handle_hello(data: HelloPacketData, state: State) -> State {
   // ? Start Heartbeats
-  erlang_send_after(0, process.self(), HeartbeatNow)
+  let _ = erlang_send_after(0, process.self(), HeartbeatNow)
 
   // Send Identify Payload
   ws_utils.gateway_identify(
@@ -60,13 +61,24 @@ fn handle_hello(data: HelloPacketData, state: State) -> State {
   State(..state, heartbeat_interval: data.heartbeat_interval)
 }
 
-fn handle_ready(_packet: Packet, _data: ReadyPacketData, state: State) -> State {
-  io.println("READY!")
+// fn handle_ready(_packet: Packet, _data: ReadyPacketData, state: State) -> State {
+//   io.println("READY!")
+//   state
+// }
+fn handle_error(error: ShimmerError, state: State) -> State {
+  io.debug(error)
   state
 }
 
-fn handle_error(error: ShimmerError, state: State) -> State {
-  io.debug(error)
+fn handle_wrong_packet(packet: Packet, expect_op: Int, state: State) -> State {
+  [
+    "Error: Expected packet with opcode",
+    int.to_string(expect_op),
+    " but found a packet with opcode",
+    int.to_string(packet.op),
+  ]
+  |> string.join(with: "")
+  |> io.println
   state
 }
 
@@ -74,34 +86,27 @@ fn handle_frame(frame: String, state: State) -> State {
   case ws_utils.ws_frame_to_packet(frame) {
     Ok(packet) ->
       case packet.op {
-        // 0 ->
-        //   case packet.t {
-        //     Some(event) ->
-        //       case event {
-        //         "READY" ->
-        //           case packet.d {
-        //             Some(packet_data) ->
-        //               case ready_packet.from_dynamic(packet_data) {
-        //                 Ok(ready_data) ->
-        //                   handle_ready(packet, ready_data, state)
-        //                 Error(err) -> handle_error(err, state)
-        //               }
-        //             None -> state
-        //           }
-        //         e -> {
-        //           io.println(
-        //             "Unknown Event: "
-        //             |> string.append(e),
-        //           )
-        //           state
-        //         }
-        //       }
-        //     None -> state
-        //   }
+        0 ->
+          // TODO sort out the event handling logic
+          case packet.t {
+            Some(event) ->
+              case event {
+                e -> {
+                  io.println(
+                    "Unknown Event: "
+                    |> string.append(e),
+                  )
+                  state
+                }
+              }
+            None -> state
+          }
         10 ->
           case packet {
             HelloPacket(d: packet_data, ..) -> handle_hello(packet_data, state)
-            _ -> state
+            _ ->
+              packet
+              |> handle_wrong_packet(10, state)
           }
         11 -> state
         _ -> {

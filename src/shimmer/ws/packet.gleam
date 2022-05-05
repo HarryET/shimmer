@@ -1,8 +1,8 @@
-import gleam/option.{None, Option}
+import gleam/option.{Option}
 import shimmer/internal/error
 import gleam/dynamic.{Dynamic, dynamic, field, int, optional, string}
 import gleam/result
-import gleam/json.{Json}
+import gleam/json
 import shimmer/types/user.{User}
 
 pub type HelloPacketData {

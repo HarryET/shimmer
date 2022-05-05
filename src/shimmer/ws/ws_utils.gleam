@@ -1,12 +1,9 @@
 import nerf/websocket
-import gleam/result
 import gleam/string
 import gleam/int
-import gleam/io
 import shimmer/ws/packet.{IdentifyPacket, IdentifyPacketData, Packet}
 import shimmer/internal/error.{ShimmerError}
-import gleam/erlang/atom
-import gleam/option.{None, Some}
+import gleam/option.{None}
 
 pub fn ws_frame_to_packet(frame: String) -> Result(Packet, ShimmerError) {
   packet.from_json_string(frame)

@@ -1,10 +1,6 @@
 import gleam/io
-import gleam/string
-import gleam/dynamic
 import gleam/erlang
-import gleam/result
 import gleam/option.{None, Option, Some}
-import gleam/otp/process
 import shimmer/types/message.{Message}
 import shimmer/ws/event_loop.{IdentifyInfo, websocket_actor}
 
@@ -57,10 +53,10 @@ pub fn main() {
   let handlers =
     handlers_builder()
     |> on_ready(fn() { io.print("Ready") })
-    |> on_message(fn(message) { io.print("Message Received!") })
+    |> on_message(fn(_message) { io.print("Message Received!") })
     |> handlers_from_builder
 
-  let client =
+  let _ =
     Client(token: "", handlers: handlers, intents: 513)
     |> connect
 
