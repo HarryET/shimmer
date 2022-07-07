@@ -31,7 +31,7 @@ pub fn on_heartbeat_ack(builder: HandlersBuilder, f: fn() -> Nil) -> HandlersBui
 
 // Utils
 
-pub fn handlers_builder() -> HandlersBuilder {
+pub fn new_builder() -> HandlersBuilder {
   HandlersBuilder(on_ready: None, on_message: None, on_heartbeat_ack: None)
 }
 

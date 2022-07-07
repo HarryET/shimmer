@@ -7,14 +7,14 @@ A Gleam library for interacting with the Discord API
 ```gleam
 import gleam/io
 import shimmer
-import shimmer.{on_message, on_ready}
+import shimmer/handlers
 
 pub fn main() {
   let handlers =
-    shimmer.handlers_builder()
-    |> on_ready(fn() { io.print("Ready") })
-    |> on_message(fn(message) { io.print("Message Received!") })
-    |> shimmer.handlers_from_builder
+    handlers.new_builder()
+    |> handlers.on_ready(fn() { io.print("Ready") })
+    |> handlers.on_message(fn(message) { io.print("Message Received!") })
+    |> handlers.handlers_from_builder
 
   let client =
     shimmer.new("TOKEN", 0, handlers)
