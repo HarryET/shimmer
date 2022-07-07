@@ -1,3 +1,6 @@
+import gleam/option.{None, Option, Some}
+import shimmer/types/message.{Message}
+
 // Types
 
 pub type HandlersBuilder {

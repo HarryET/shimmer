@@ -4,7 +4,6 @@ import gleam/int
 import shimmer/ws/packet.{IdentifyPacket, IdentifyPacketData, Packet}
 import shimmer/internal/error.{ShimmerError}
 import gleam/option.{None}
-import gleam/io
 
 pub fn ws_frame_to_packet(frame: String) -> Result(Packet, ShimmerError) {
   packet.from_json_string(frame)

@@ -2,7 +2,8 @@
 
 A Gleam library for interacting with the Discord API
 
-> ⚠️ **Note:** No handlers are currently triggered. This can currently only spin a bot up and manage the heartbeats.
+> **Warning**
+> No handlers are currently triggered. This can currently only spin a bot up and manage the heartbeats.
 
 ## Basic Example
 

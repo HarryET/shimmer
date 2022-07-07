@@ -7,7 +7,7 @@ import gleam/int
 import gleam/order.{Gt}
 import nerf/websocket.{Connection}
 import shimmer/ws/packet.{
-  HelloPacket, HelloPacketData, IdentifyPacketData, Packet, ReadyPacketData,
+  HelloPacket, HelloPacketData, IdentifyPacketData, Packet,
 }
 import gleam/otp/process
 import shimmer/internal/error.{ShimmerError}
@@ -59,11 +59,6 @@ fn handle_hello(data: HelloPacketData, state: State) -> State {
 
   // Return state with new heartbeat interval.
   State(..state, heartbeat_interval: data.heartbeat_interval)
-}
-
-fn handle_ready(_packet: Packet, _data: ReadyPacketData, state: State) -> State {
-  io.println("READY!")
-  state
 }
 
 fn handle_error(error: ShimmerError, state: State) -> State {

@@ -4,7 +4,6 @@ import gleam/dynamic.{Dynamic, dynamic, field, int, optional, string}
 import gleam/result
 import gleam/json
 import shimmer/types/user.{User}
-import gleam/io
 
 pub type HelloPacketData {
   HelloPacketData(heartbeat_interval: Int)
