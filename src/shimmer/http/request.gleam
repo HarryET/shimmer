@@ -1,12 +1,13 @@
-import gleam/http.{Method, Request}
+import gleam/http.{Method}
+import gleam/http/request.{Request}
 import gleam/string
 
 pub fn new(method: Method, path: String) -> Request(String) {
-  http.default_req()
-  |> http.set_method(method)
-  |> http.set_host("https://discord.com")
-  |> http.set_path(string.append(to: "/api/v9", suffix: path))
-  |> http.prepend_req_header("accept", "application/json")
+  request.new()
+  |> request.set_method(method)
+  |> request.set_host("https://discord.com")
+  |> request.set_path(string.append(to: "/api/v9", suffix: path))
+  |> request.prepend_header("accept", "application/json")
 }
 
 pub fn new_with_auth(
@@ -15,7 +16,7 @@ pub fn new_with_auth(
   token: String,
 ) -> Request(String) {
   new(method, path)
-  |> http.prepend_req_header(
+  |> request.prepend_header(
     "authorization",
     string.append(to: "Bot ", suffix: token),
   )

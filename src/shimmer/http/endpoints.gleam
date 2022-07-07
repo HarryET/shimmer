@@ -2,6 +2,7 @@ import gleam/result
 import gleam/hackney
 import gleam/result
 import gleam/http.{Get}
+import gleam/http/response
 import gleeunit/should
 import shimmer/types/user
 import shimmer/http/request
@@ -16,10 +17,8 @@ pub fn me(token: String) -> Result(user.User, error.ShimmerError) {
     |> result.map_error(error.HttpError)
 
   resp
-  |> http.get_resp_header("content-type")
+  |> response.get_header("content-type")
   |> should.equal(Ok("application/json"))
 
-  try me_user = user.from_json_string(resp.body)
-
-  Ok(me_user)
+  user.from_json_string(resp.body)
 }

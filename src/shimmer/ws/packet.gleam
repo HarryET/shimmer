@@ -1,12 +1,27 @@
-import gleam/option.{Option}
+import gleam/option.{Option, Some, None}
 import shimmer/internal/error
 import gleam/dynamic.{Dynamic, dynamic, field, int, optional, string}
 import gleam/result
 import gleam/json
 import shimmer/types/user.{User}
+import gleam/io
 
 pub type HelloPacketData {
   HelloPacketData(heartbeat_interval: Int)
+}
+
+fn hello_packet_data_from_dynamic(
+  data: Option(Dynamic),
+) -> Result(HelloPacketData, error.ShimmerError) {
+  case data {
+    Some(raw_data) -> {
+      try heartbeat_interval = raw_data
+      |> dynamic.field("heartbeat_interval", of: int)
+      |> result.map_error(error.InvalidDynamicList)
+      Ok(HelloPacketData(heartbeat_interval: heartbeat_interval))
+    }
+    None -> Error(error.EmptyOptionWhenRequired)
+  }
 }
 
 pub type ReadyPacketData {
@@ -39,8 +54,22 @@ pub fn from_json_string(encoded: String) -> Result(Packet, error.ShimmerError) {
       field("d", of: optional(dynamic)),
     )
 
-  json.decode(from: encoded, using: packet_decoded)
-  |> result.map_error(error.InvalidJson)
+  try packet =
+    json.decode(from: encoded, using: packet_decoded)
+    |> result.map_error(error.InvalidJson)
+
+  case packet.op {
+    10 -> {
+      case packet {
+        RawPacket(_, _, _, d) -> {
+          try data = hello_packet_data_from_dynamic(d)
+          Ok(HelloPacket(op: packet.op, s: packet.s, t: packet.t, d: data))
+        }
+        _ -> Ok(packet)
+      }
+    }
+    _ -> Ok(packet)
+  }
 }
 
 pub fn get_data_as_json(packet: Packet) -> json.Json {
@@ -49,6 +78,11 @@ pub fn get_data_as_json(packet: Packet) -> json.Json {
       json.object([
         #("token", json.string(d.token)),
         #("intents", json.int(d.intents)),
+        #("properties", json.object([
+          #("os", json.string("Windows")), // TODO dynamic
+          #("broswer", json.string("Shimmer/0.1.0")), // TODO dynamic
+          #("device", json.string("Shimmer/0.1.0")), // TODO dynamic
+        ])),
       ])
     _ -> json.object([])
   }

@@ -4,6 +4,7 @@ import gleam/hackney
 
 pub type ShimmerError {
   UnknownAccount
+  EmptyOptionWhenRequired
   InvalidJson(json.DecodeError)
   InvalidDynamicList(List(dynamic.DecodeError))
   InvalidFormat(dynamic.DecodeError)

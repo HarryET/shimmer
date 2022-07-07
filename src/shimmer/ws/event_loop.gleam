@@ -61,10 +61,11 @@ fn handle_hello(data: HelloPacketData, state: State) -> State {
   State(..state, heartbeat_interval: data.heartbeat_interval)
 }
 
-// fn handle_ready(_packet: Packet, _data: ReadyPacketData, state: State) -> State {
-//   io.println("READY!")
-//   state
-// }
+fn handle_ready(_packet: Packet, _data: ReadyPacketData, state: State) -> State {
+  io.println("READY!")
+  state
+}
+
 fn handle_error(error: ShimmerError, state: State) -> State {
   io.debug(error)
   state
@@ -74,10 +75,10 @@ fn handle_wrong_packet(packet: Packet, expect_op: Int, state: State) -> State {
   [
     "Error: Expected packet with opcode",
     int.to_string(expect_op),
-    " but found a packet with opcode",
+    "but found a packet with opcode",
     int.to_string(packet.op),
   ]
-  |> string.join(with: "")
+  |> string.join(with: " ")
   |> io.println
   state
 }
@@ -108,7 +109,10 @@ fn handle_frame(frame: String, state: State) -> State {
               packet
               |> handle_wrong_packet(10, state)
           }
-        11 -> state
+        11 -> {
+          io.println("Heartbeat Ack")
+          state
+        }
         _ -> {
           io.println(
             "Unknown Packet ["
