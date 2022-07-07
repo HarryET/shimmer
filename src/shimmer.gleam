@@ -64,7 +64,7 @@ pub fn main() {
     |> handlers_from_builder
 
   let _ =
-    Client(token: "OTI5MzU5MDY5NjQ1NTI1MDAy.GpRbtQ._PRVnOfEMQ7fJCVZpvGurjnkoO3M7qx69ZMWfw", handlers: handlers, intents: 513)
+    Client(token: "", handlers: handlers, intents: 513)
     |> connect
 
   erlang.sleep_forever()
