@@ -1,9 +1,10 @@
--module(nerf_ffi).
+-module(shimmer_ws).
+
+% Based upon github.com/lpil/nerf
 
 -export([ws_receive/2, ws_await_upgrade/2, ws_open/2]).
 
-% TODO: make the protocols a param that can be specified in gleam
-ws_open(Host, Port) -> 
+ws_open(Host, Port) ->
     gun:open(Host, Port, #{protocols => [http]}).
 
 ws_receive({connection, Ref, Pid}, Timeout)
@@ -18,7 +19,7 @@ ws_receive({connection, Ref, Pid}, Timeout)
       {error, nil}
     end.
 
-ws_await_upgrade({connection, Ref, Pid}, Timeout) 
+ws_await_upgrade({connection, Ref, Pid}, Timeout)
     when is_reference(Ref) andalso is_pid(Pid) ->
     receive
         {gun_upgrade, Pid, Ref, [<<"websocket">>], _} ->

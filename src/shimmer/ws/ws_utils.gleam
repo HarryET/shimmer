@@ -1,4 +1,4 @@
-import nerf/websocket
+import shimmer/internal/ws/websocket
 import gleam/string
 import gleam/int
 import shimmer/ws/packet.{IdentifyPacket, IdentifyPacketData, Packet}

@@ -1,7 +1,7 @@
 import gleam/http.{Header}
 import gleam/dynamic.{Dynamic}
 import gleam/result
-import nerf/gun.{ConnectionPid, StreamReference}
+import shimmer/internal/ws/gun.{ConnectionPid, StreamReference}
 
 pub opaque type Connection {
   Connection(ref: StreamReference, pid: ConnectionPid)
@@ -45,10 +45,10 @@ pub fn send(to conn: Connection, this message: String) -> Nil {
 }
 
 pub external fn receive(from: Connection, within: Int) -> Result(Frame, Nil) =
-  "nerf_ffi" "ws_receive"
+  "shimmer_ws" "ws_receive"
 
 external fn await_upgrade(from: Connection, within: Int) -> Result(Nil, Dynamic) =
-  "nerf_ffi" "ws_await_upgrade"
+  "shimmer_ws" "ws_await_upgrade"
 
 // TODO: listen for close events
 pub fn close(conn: Connection) -> Nil {

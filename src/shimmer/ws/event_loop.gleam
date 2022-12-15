@@ -5,7 +5,7 @@ import gleam/dynamic.{Dynamic}
 import shimmer/ws/ws_utils
 import gleam/int
 import gleam/order.{Gt}
-import nerf/websocket.{Connection}
+import shimmer/internal/ws/websocket.{Connection}
 import shimmer/ws/packet.{
   HelloPacket, HelloPacketData, IdentifyPacketData, Packet,
 }
