@@ -5,3 +5,5 @@ erl_crash.dump
 .DS_store
 .vscode
 .idea
+# Used for storing files with tokens for quick testing
+*_demo.gleam
