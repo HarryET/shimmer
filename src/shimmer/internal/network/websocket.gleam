@@ -1,7 +1,9 @@
+//// Based upon github.com/lpil/nerf
+
 import gleam/http.{Header}
 import gleam/dynamic.{Dynamic}
 import gleam/result
-import shimmer/internal/ws/gun.{ConnectionPid, StreamReference}
+import shimmer/internal/network/gun.{ConnectionPid, StreamReference}
 
 pub opaque type Connection {
   Connection(ref: StreamReference, pid: ConnectionPid)

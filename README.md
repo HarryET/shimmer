@@ -3,7 +3,7 @@
 A Gleam library for interacting with the Discord API
 
 > **Warning**
-> No handlers are currently triggered. This can currently only spin a bot up and manage the heartbeats.
+> This Library is pre-alpha and being worked on.
 
 ## Basic Example
 
@@ -26,7 +26,3 @@ pub fn main() {
   erlang.sleep_forever()
 }
 ```
-
-## Notes
-
-- Currently, we bundle [nerf](https://github.com/lpil/nerf), this will be removed once this [pull request](https://github.com/lpil/nerf/pull/1) is merged.

@@ -1,4 +1,4 @@
-import gleam/option.{Option, Some, None}
+import gleam/option.{None, Option, Some}
 import shimmer/internal/error
 import gleam/dynamic.{Dynamic, dynamic, field, int, optional, string}
 import gleam/result
@@ -14,9 +14,10 @@ fn hello_packet_data_from_dynamic(
 ) -> Result(HelloPacketData, error.ShimmerError) {
   case data {
     Some(raw_data) -> {
-      try heartbeat_interval = raw_data
-      |> dynamic.field("heartbeat_interval", of: int)
-      |> result.map_error(error.InvalidDynamicList)
+      try heartbeat_interval =
+        raw_data
+        |> dynamic.field("heartbeat_interval", of: int)
+        |> result.map_error(error.InvalidDynamicList)
       Ok(HelloPacketData(heartbeat_interval: heartbeat_interval))
     }
     None -> Error(error.EmptyOptionWhenRequired)
@@ -58,7 +59,7 @@ pub fn from_json_string(encoded: String) -> Result(Packet, error.ShimmerError) {
     |> result.map_error(error.InvalidJson)
 
   case packet.op {
-    10 -> {
+    10 ->
       case packet {
         RawPacket(_, _, _, d) -> {
           try data = hello_packet_data_from_dynamic(d)
@@ -66,7 +67,6 @@ pub fn from_json_string(encoded: String) -> Result(Packet, error.ShimmerError) {
         }
         _ -> Ok(packet)
       }
-    }
     _ -> Ok(packet)
   }
 }
@@ -77,12 +77,18 @@ pub fn get_data_as_json(packet: Packet) -> json.Json {
       json.object([
         #("token", json.string(d.token)),
         #("intents", json.int(d.intents)),
-        #("properties", json.object([
-          #("os", json.string("Windows")), // TODO dynamic
-          #("broswer", json.string("Shimmer/0.1.0")), // TODO dynamic
-          #("device", json.string("Shimmer/0.1.0")), // TODO dynamic
-        ])),
+        #(
+          "properties",
+          json.object([
+            #("os", json.string("Windows")),
+            // TODO dynamic
+            #("broswer", json.string("Shimmer/0.1.0")),
+            // TODO dynamic
+            #("device", json.string("Shimmer/0.1.0")),
+          ]),
+        ),
       ])
+    // TODO dynamic
     _ -> json.object([])
   }
 }

@@ -12,7 +12,11 @@ pub type HandlersBuilder {
 }
 
 pub type Handlers {
-  Handlers(on_ready: fn() -> Nil, on_message: fn(Message) -> Nil, on_heartbeat_ack: fn() -> Nil,)
+  Handlers(
+    on_ready: fn() -> Nil,
+    on_message: fn(Message) -> Nil,
+    on_heartbeat_ack: fn() -> Nil,
+  )
 }
 
 // Events
@@ -28,7 +32,10 @@ pub fn on_message(
   HandlersBuilder(..builder, on_message: Some(f))
 }
 
-pub fn on_heartbeat_ack(builder: HandlersBuilder, f: fn() -> Nil) -> HandlersBuilder {
+pub fn on_heartbeat_ack(
+  builder: HandlersBuilder,
+  f: fn() -> Nil,
+) -> HandlersBuilder {
   HandlersBuilder(..builder, on_heartbeat_ack: Some(f))
 }
 

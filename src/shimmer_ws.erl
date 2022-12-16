@@ -5,6 +5,7 @@
 -export([ws_receive/2, ws_await_upgrade/2, ws_open/2]).
 
 ws_open(Host, Port) ->
+    % TODO: Verify TLS
     gun:open(Host, Port, #{protocols => [http]}).
 
 ws_receive({connection, Ref, Pid}, Timeout)

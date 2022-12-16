@@ -1,5 +1,4 @@
-//// Low level bindings to the gun API. You typically do not need to use this.
-//// Prefer the other modules in this library.
+//// Based upon github.com/lpil/nerf
 
 import gleam/http.{Header}
 import gleam/erlang/charlist.{Charlist}

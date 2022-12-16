@@ -1,4 +1,4 @@
-import shimmer/internal/ws/websocket
+import shimmer/internal/network/websocket
 import gleam/string
 import gleam/int
 import shimmer/ws/packet.{IdentifyPacket, IdentifyPacketData, Packet}
@@ -7,14 +7,6 @@ import gleam/option.{None}
 
 pub fn ws_frame_to_packet(frame: String) -> Result(Packet, ShimmerError) {
   packet.from_json_string(frame)
-}
-
-/// Opens a connection to the gateway.
-pub fn open_gateway() -> Result(websocket.Connection, Nil) {
-  assert Ok(conn) =
-    websocket.connect("gateway.discord.gg", "/?v=9&encoding=json", 443, [])
-
-  Ok(conn)
 }
 
 pub fn gateway_heartbeat(sequence: Int, conn: websocket.Connection) {

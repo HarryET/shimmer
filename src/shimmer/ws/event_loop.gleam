@@ -1,170 +1,67 @@
+import shimmer/internal/network/websocket.{Connection}
+import shimmer/client.{Client}
+import gleam/otp/actor.{InitResult, Next}
+import shimmer/http/endpoints
+import shimmer/internal/erl/uri
 import gleam/io
-import gleam/string
-import gleam/option.{None, Some}
-import gleam/dynamic.{Dynamic}
-import shimmer/ws/ws_utils
-import gleam/int
-import gleam/order.{Gt}
-import shimmer/internal/ws/websocket.{Connection}
-import shimmer/ws/packet.{
-  HelloPacket, HelloPacketData, IdentifyPacketData, Packet,
-}
-import gleam/otp/process
-import shimmer/internal/error.{ShimmerError}
+import gleam/result
+import gleam/erlang/process
 
-pub type Message {
-  HeartbeatNow
-  Frame(String)
+pub type WebsocketMeta {
+  WebsocketMeta(token: String, intents: Int)
 }
 
-pub type IdentifyInfo {
-  IdentifyInfo(token: String, intents: Int)
-}
-
-pub type State {
-  State(
+pub type ActorState {
+  ActorState(
     heartbeat_interval: Int,
     sequence: Int,
     conn: Connection,
-    identify_info: IdentifyInfo,
+    meta: WebsocketMeta,
   )
 }
 
-// TODO fix, not being run.
-fn heartbeat(state: State) -> State {
-  // Send a message in the future to trigger the next heartbeat
-  let _ =
-    erlang_send_after(state.heartbeat_interval, process.self(), HeartbeatNow)
+pub fn actor_setup(client: Client) -> fn() -> InitResult(ActorState, msg) {
+  fn() {
+    let setup = fn(inner_client: Client) {
+      // 1. Fetch Websocket URL for Bot
+      try gateway_settings =
+        endpoints.bot_gateway(inner_client.token)
+        |> result.replace_error(actor.Failed(
+          "Couldn't get bot gateway information",
+        ))
 
-  case int.compare(state.sequence, -1) {
-    Gt -> ws_utils.gateway_heartbeat(state.sequence, state.conn)
-    _ -> ws_utils.gateway_heartbeat_null(state.conn)
-  }
-  state
-}
+      let url =
+        uri.parse(gateway_settings.url)
+        |> io.debug
 
-fn handle_hello(data: HelloPacketData, state: State) -> State {
-  // ? Start Heartbeats
-  let _ = erlang_send_after(0, process.self(), HeartbeatNow)
+      // 2. Open Websocket
+      try conn =
+        websocket.connect(url.host, "/?v=10&encoding=json", 443, [])
+        |> result.replace_error(actor.Failed("Failed to open websocket"))
 
-  // Send Identify Payload
-  ws_utils.gateway_identify(
-    IdentifyPacketData(
-      token: state.identify_info.token,
-      intents: state.identify_info.intents,
-      properties: None,
-    ),
-    state.conn,
-  )
+      let selector = process.new_selector()
 
-  // Return state with new heartbeat interval.
-  State(..state, heartbeat_interval: data.heartbeat_interval)
-}
+      Ok(actor.Ready(
+        ActorState(
+          heartbeat_interval: -1,
+          sequence: -1,
+          conn: conn,
+          meta: WebsocketMeta(
+            token: inner_client.token,
+            intents: inner_client.intents,
+          ),
+        ),
+        selector,
+      ))
+    }
 
-fn handle_error(error: ShimmerError, state: State) -> State {
-  io.debug(error)
-  state
-}
-
-fn handle_wrong_packet(packet: Packet, expect_op: Int, state: State) -> State {
-  [
-    "Error: Expected packet with opcode",
-    int.to_string(expect_op),
-    "but found a packet with opcode",
-    int.to_string(packet.op),
-  ]
-  |> string.join(with: " ")
-  |> io.println
-  state
-}
-
-fn handle_frame(frame: String, state: State) -> State {
-  case ws_utils.ws_frame_to_packet(frame) {
-    Ok(packet) ->
-      case packet.op {
-        0 ->
-          // TODO sort out the event handling logic
-          case packet.t {
-            Some(event) ->
-              case event {
-                e -> {
-                  io.println(
-                    "Unknown Event: "
-                    |> string.append(e),
-                  )
-                  state
-                }
-              }
-            None -> state
-          }
-        10 ->
-          case packet {
-            HelloPacket(d: packet_data, ..) -> handle_hello(packet_data, state)
-            _ ->
-              packet
-              |> handle_wrong_packet(10, state)
-          }
-        11 -> {
-          io.println("Heartbeat Ack")
-          state
-        }
-        _ -> {
-          io.println(
-            "Unknown Packet ["
-            |> string.append(int.to_string(packet.op))
-            |> string.append("] ")
-            |> string.append(frame),
-          )
-          state
-        }
-      }
-    Error(err) -> {
-      io.println(
-        "Invalid Packet "
-        |> string.append(frame),
-      )
-      handle_error(err, state)
+    case setup(client) {
+      Ok(ready) -> ready
+      Error(failed) -> failed
     }
   }
 }
 
-fn handle_message(msg: Message, state: State) -> State {
-  case msg {
-    HeartbeatNow -> heartbeat(state)
-    Frame(frame) -> handle_frame(frame, state)
-  }
+pub fn actor_loop(_msg: msg, state: ActorState) -> Next(ActorState) {
+  actor.Continue(state)
 }
-
-// conn: Connection,
-pub fn websocket_actor(
-  identify_info: IdentifyInfo,
-) -> Result(process.Pid, Dynamic) {
-  // Start the actor
-  start_erlang_event_loop(Spec(
-    init: fn() {
-      assert Ok(conn) = ws_utils.open_gateway()
-
-      State(
-        heartbeat_interval: 41250,
-        sequence: -1,
-        conn: conn,
-        identify_info: identify_info,
-      )
-    },
-    handle_message: handle_message,
-  ))
-}
-
-pub type Spec {
-  Spec(init: fn() -> State, handle_message: fn(Message, State) -> State)
-}
-
-external fn start_erlang_event_loop(Spec) -> Result(process.Pid, Dynamic) =
-  "shimmer_event_loop" "start_link"
-
-external fn erlang_send_after(
-  Int,
-  process.Pid,
-  Message,
-) -> Result(process.Pid, Dynamic) =
-  "erlang" "send_after"
