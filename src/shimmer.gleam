@@ -8,10 +8,10 @@ import gleam/result
 pub fn connect(client: Client) -> Result(String, error.ShimmerError) {
   let actor_spec =
     Spec(
-      init: event_loop.actor_setup(client),
-      init_timeout: 30 * 1000,
+      init: event_loop.ws_actor_setup(client),
       // 30 seconds
-      loop: event_loop.actor_loop,
+      init_timeout: 30 * 1000,
+      loop: event_loop.ws_actor_loop,
     )
 
   try _ =
