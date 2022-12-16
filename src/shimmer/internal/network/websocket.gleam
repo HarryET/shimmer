@@ -10,7 +10,7 @@ pub opaque type Connection {
 }
 
 pub type Frame {
-  Close
+  Close(Int, String)
   Text(String)
   Binary(BitString)
 }
@@ -42,15 +42,15 @@ pub fn connect(
   Ok(conn)
 }
 
-pub fn send(to conn: Connection, this message: String) -> Nil {
-  gun.ws_send(conn.pid, gun.Text(message))
+pub fn send(to conn: Connection, this message: BitString) -> Nil {
+  gun.ws_send(conn.pid, gun.Binary(message))
 }
 
 pub external fn receive(from: Connection, within: Int) -> Result(Frame, Nil) =
-  "shimmer_ws" "ws_receive"
+  "shimmer_net" "ws_receive"
 
 external fn await_upgrade(from: Connection, within: Int) -> Result(Nil, Dynamic) =
-  "shimmer_ws" "ws_await_upgrade"
+  "shimmer_net" "ws_await_upgrade"
 
 // TODO: listen for close events
 pub fn close(conn: Connection) -> Nil {

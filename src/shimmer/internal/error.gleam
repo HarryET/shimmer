@@ -12,4 +12,5 @@ pub type ShimmerError {
   WebsocketError(Nil)
   HttpError(hackney.Error)
   ActorError(actor.StartError)
+  NilMapEntry(Nil)
 }

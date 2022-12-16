@@ -5,34 +5,30 @@ import shimmer/http/endpoints
 import shimmer/internal/erl/uri
 import gleam/io
 import gleam/result
+import gleam/erlang/atom
 import gleam/erlang/process.{Selector, Subject}
-import gleam/option.{None, Option, Some}
-import shimmer/ws/ws_utils
+import gleam/option.{Option, Some}
+import shimmer/ws/packet
+import gleam/dynamic
+import shimmer/ws/packets/hello
+import shimmer/ws/packets/identify
+import gleam/map
+import gleam/erlang
+import gleam/int
+import gleam/string
+import shimmer/handlers.{Handlers}
 
 pub type Message {
-  /// Used for the Websocket actor to update the state value
-  Sync(ActorState)
+  /// Frames from Gun
+  WebsocketFrame(websocket.Frame)
   /// Heartbeat Message Only
   Beat
-  /// Websocket Message Only
-  Next
   /// Kill the Actor
   Halt
 }
 
 pub type WebsocketMeta {
-  WebsocketMeta(token: String, intents: Int)
-}
-
-pub type Selectors {
-  Selectors(websocket: Selector(Message), heartbeat: Selector(Message))
-}
-
-pub type Subjects {
-  Subjects(
-    to_websocket: Subject(Message),
-    to_heartbeat: Option(Subject(Message)),
-  )
+  WebsocketMeta(token: String, intents: Int, handlers: Handlers)
 }
 
 pub type ActorState {
@@ -41,12 +37,12 @@ pub type ActorState {
     sequence: Int,
     conn: Connection,
     meta: WebsocketMeta,
-    selectors: Selectors,
-    subjects: Subjects,
+    selector: Selector(Message),
+    subject: Subject(Message),
   )
 }
 
-pub fn ws_actor_setup(client: Client) -> fn() -> InitResult(ActorState, Message) {
+pub fn actor_setup(client: Client) -> fn() -> InitResult(ActorState, Message) {
   fn() {
     let setup = fn(inner_client: Client) {
       // 1. Fetch Websocket URL for Bot
@@ -56,21 +52,25 @@ pub fn ws_actor_setup(client: Client) -> fn() -> InitResult(ActorState, Message)
           "Couldn't get bot gateway information",
         ))
 
-      let url =
-        uri.parse(gateway_settings.url)
-        |> io.debug
+      let url = uri.parse(gateway_settings.url)
 
       // 2. Open Websocket
       try conn =
-        websocket.connect(url.host, "/?v=10&encoding=json", 443, [])
+        websocket.connect(url.host, "/?v=10&encoding=etf", 443, [])
         |> result.replace_error(actor.Failed("Failed to open websocket"))
 
-      let to_websocket_subject = process.new_subject()
-      let websocket_selector =
+      let to_self_subject = process.new_subject()
+      let selector =
         process.new_selector()
-        |> process.selecting(to_websocket_subject, fn(a) { a })
+        |> process.selecting(to_self_subject, fn(a) { a })
+        |> process.selecting_record4(
+          atom.create_from_string("gun_ws"),
+          fn(_pid, _ref, dyn_frame) {
+            let map = fn(frame: websocket.Frame) { WebsocketFrame(frame) }
 
-      let heartbeat_selector = process.new_selector()
+            map(dynamic.unsafe_coerce(dyn_frame))
+          },
+        )
 
       Ok(actor.Ready(
         ActorState(
@@ -80,17 +80,12 @@ pub fn ws_actor_setup(client: Client) -> fn() -> InitResult(ActorState, Message)
           meta: WebsocketMeta(
             token: inner_client.token,
             intents: inner_client.intents,
+            handlers: inner_client.handlers,
           ),
-          selectors: Selectors(
-            websocket: websocket_selector,
-            heartbeat: heartbeat_selector,
-          ),
-          subjects: Subjects(
-            to_websocket: to_websocket_subject,
-            to_heartbeat: None,
-          ),
+          selector: selector,
+          subject: to_self_subject,
         ),
-        websocket_selector,
+        selector,
       ))
     }
 
@@ -101,62 +96,101 @@ pub fn ws_actor_setup(client: Client) -> fn() -> InitResult(ActorState, Message)
   }
 }
 
-pub fn ws_actor_loop(msg: Message, _state: ActorState) -> Next(ActorState) {
+pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
   case msg {
-    Sync(new_state) -> actor.Continue(new_state)
-    _ ->
-      actor.Stop(process.Abnormal("Heartbeat actor recieved unknown message"))
-  }
-}
-
-pub fn heartbeat_actor_setup(
-  inital_state: ActorState,
-) -> fn() -> InitResult(ActorState, Message) {
-  fn() {
-    let to_heartbeat_subject = process.new_subject()
-    let new_heartbeat_selector =
-      inital_state.selectors.heartbeat
-      |> process.selecting(to_heartbeat_subject, fn(a) { a })
-    let new_state =
-      ActorState(
-        ..inital_state,
-        selectors: Selectors(
-          ..inital_state.selectors,
-          heartbeat: new_heartbeat_selector,
-        ),
-        subjects: Subjects(
-          ..inital_state.subjects,
-          to_heartbeat: Some(to_heartbeat_subject),
-        ),
-      )
-
-    // Update the main Websocket Actor
-    process.send(new_state.subjects.to_websocket, Sync(new_state))
-
-    actor.Ready(new_state, new_state.selectors.heartbeat)
-  }
-}
-
-pub fn heartbeat_actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
-  case msg {
-    Sync(new_state) -> actor.Continue(new_state)
-    Beat -> {
-      case state.sequence {
-        -1 -> ws_utils.gateway_heartbeat_null(state.conn)
-        _ -> ws_utils.gateway_heartbeat(state.sequence, state.conn)
-      }
-      // TODO send `Beat` after heartbeat interval
-      case state.subjects.to_heartbeat {
-        Some(subject) -> {
-          process.send_after(subject, state.heartbeat_interval, Beat)
-          Nil
+    WebsocketFrame(websocket.Binary(etf_bitstring)) -> {
+      let dynamic_payload = parse_etf(etf_bitstring)
+      case packet.from_dynamic(dynamic_payload) {
+        // Hello
+        Ok(#(10, seq, _, Some(data))) ->
+          case hello.from_map(data) {
+            Ok(packet) -> {
+              let new_state =
+                ActorState(
+                  ..update_state(seq, state),
+                  heartbeat_interval: packet.heartbeat_interval,
+                )
+              // Send initial heartbeat
+              websocket.send(
+                new_state.conn,
+                map.new()
+                |> map.insert("op", dynamic.from(1))
+                |> map.insert("d", dynamic.from(Nil))
+                |> erlang.term_to_binary,
+              )
+              // Identify
+              websocket.send(
+                new_state.conn,
+                identify.IdentifyPacketData(
+                  token: state.meta.token,
+                  intents: state.meta.intents,
+                )
+                |> identify.to_etf,
+              )
+              process.send_after(
+                new_state.subject,
+                new_state.heartbeat_interval,
+                Beat,
+              )
+              actor.Continue(new_state)
+            }
+            _ ->
+              // TODO handle errors better!
+              actor.Continue(update_state(seq, state))
+          }
+        // Heartbeat Ack
+        Ok(#(11, seq, _, _)) -> {
+          state.meta.handlers.on_heartbeat_ack()
+          actor.Continue(update_state(seq, state))
         }
-        // TODO handle better!
-        None -> io.println("Failed to send next beat, bot will die!")
+        _ ->
+          // TODO handle errors better!
+          actor.Continue(state)
       }
+    }
+    WebsocketFrame(websocket.Close(code, message)) -> {
+      // TODO handle reconnect
+      io.println(
+        [
+          "Websocket Closed with code: ",
+          int.to_string(code),
+          " and message \"",
+          message,
+          "\"",
+        ]
+        |> string.join(with: ""),
+      )
+      actor.Stop(process.Abnormal(message))
+    }
+    Beat -> {
+      let payload =
+        case state.sequence {
+          -1 ->
+            map.new()
+            |> map.insert("op", dynamic.from(1))
+            |> map.insert("d", dynamic.from(Nil))
+          seq ->
+            map.new()
+            |> map.insert("op", dynamic.from(1))
+            |> map.insert("d", dynamic.from(int.to_string(seq)))
+        }
+        |> erlang.term_to_binary
+      websocket.send(state.conn, payload)
+      process.send_after(state.subject, state.heartbeat_interval, Beat)
       actor.Continue(state)
     }
     _ ->
       actor.Stop(process.Abnormal("Heartbeat actor recieved unknown message"))
   }
 }
+
+fn update_state(seq: Option(Int), old_state: ActorState) -> ActorState {
+  ActorState(
+    ..old_state,
+    sequence: seq
+    |> option.unwrap(old_state.sequence),
+  )
+}
+
+external fn parse_etf(etf: BitString) -> dynamic.Dynamic =
+  "shimmer_ws" "parse_etf"
