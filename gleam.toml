@@ -1,12 +1,12 @@
 name = "shimmer"
-version = "0.0.3"
+version = "0.0.4"
 
 licences = ["Apache-2.0"]
 description = "A Gleam library for interacting with the Discord API"
 repository = { type = "github", user = "HarryET", repo = "shimmer" }
 links = [
-    { title = "Website", href= "https://gleampkg.com/packages/shimmer" },
-    #{ title = "Sponsor", href = "https://github.com/sponsors/HarryET" }
+    { title = "Website", href= "https://hexdocs.pm/shimmer" },
+    { title = "Sponsor", href = "https://github.com/sponsors/HarryET" }
 ]
 
 [dependencies]
