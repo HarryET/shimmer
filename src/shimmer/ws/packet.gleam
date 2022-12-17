@@ -1,9 +1,10 @@
-import gleam/option.{Option}
+import gleam/option.{None, Option, Some}
 import shimmer/internal/error
 import gleam/dynamic.{Dynamic, dynamic}
 import gleam/result
 import gleam/map
 import shimmer/internal/map_helpers.{dyn_atom, get_field_safe}
+import gleam/erlang/atom
 
 pub fn from_dynamic(
   encoded: Dynamic,
@@ -24,9 +25,13 @@ pub fn from_dynamic(
     packet
     |> get_field_safe(dyn_atom("s"), dynamic.optional(dynamic.int))
 
-  try t =
+  try t_atom =
     packet
-    |> get_field_safe(dyn_atom("t"), dynamic.optional(dynamic.string))
+    |> get_field_safe(dyn_atom("t"), dynamic.optional(atom.from_dynamic))
+  let t = case t_atom {
+    Some(a) -> Some(atom.to_string(a))
+    _ -> None
+  }
 
   try d =
     packet

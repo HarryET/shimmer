@@ -1,11 +1,12 @@
 import gleam/option.{None, Option, Some}
 import shimmer/types/message.{Message}
+import shimmer/ws/packets/ready.{ReadyPacket}
 
 // Types
 
 pub type HandlersBuilder {
   HandlersBuilder(
-    on_ready: Option(fn() -> Nil),
+    on_ready: Option(fn(ReadyPacket) -> Nil),
     on_message: Option(fn(Message) -> Nil),
     on_heartbeat_ack: Option(fn() -> Nil),
   )
@@ -13,7 +14,7 @@ pub type HandlersBuilder {
 
 pub type Handlers {
   Handlers(
-    on_ready: fn() -> Nil,
+    on_ready: fn(ReadyPacket) -> Nil,
     on_message: fn(Message) -> Nil,
     on_heartbeat_ack: fn() -> Nil,
   )
@@ -21,7 +22,10 @@ pub type Handlers {
 
 // Events
 
-pub fn on_ready(builder: HandlersBuilder, f: fn() -> Nil) -> HandlersBuilder {
+pub fn on_ready(
+  builder: HandlersBuilder,
+  f: fn(ReadyPacket) -> Nil,
+) -> HandlersBuilder {
   HandlersBuilder(..builder, on_ready: Some(f))
 }
 
@@ -48,7 +52,7 @@ pub fn new_builder() -> HandlersBuilder {
 pub fn handlers_from_builder(builder: HandlersBuilder) -> Handlers {
   Handlers(
     on_ready: builder.on_ready
-    |> option.unwrap(or: fn() { Nil }),
+    |> option.unwrap(or: fn(_) { Nil }),
     on_message: builder.on_message
     |> option.unwrap(or: fn(_) { Nil }),
     on_heartbeat_ack: builder.on_heartbeat_ack

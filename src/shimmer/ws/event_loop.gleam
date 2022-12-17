@@ -11,6 +11,7 @@ import gleam/option.{Option, Some}
 import shimmer/ws/packet
 import gleam/dynamic
 import shimmer/ws/packets/hello
+import shimmer/ws/packets/ready
 import shimmer/ws/packets/identify
 import gleam/map
 import gleam/erlang
@@ -101,6 +102,16 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
     WebsocketFrame(websocket.Binary(etf_bitstring)) -> {
       let dynamic_payload = parse_etf(etf_bitstring)
       case packet.from_dynamic(dynamic_payload) {
+        Ok(#(0, seq, Some("READY"), Some(data))) ->
+          case ready.from_map(data) {
+            Ok(packet) -> {
+              state.meta.handlers.on_ready(packet)
+              actor.Continue(update_state(seq, state))
+            }
+            _ ->
+              // TODO handle errors better!
+              actor.Continue(update_state(seq, state))
+          }
         // Hello
         Ok(#(10, seq, _, Some(data))) ->
           case hello.from_map(data) {

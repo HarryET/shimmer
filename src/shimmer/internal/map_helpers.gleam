@@ -8,10 +8,27 @@ pub fn dyn_atom(val: String) -> dynamic.Dynamic {
   dynamic.from(atom.create_from_string(val))
 }
 
-pub fn get_field_safe(
-  map: map.Map(a, b),
+pub fn get_map_field_safe(
+  map: map.Map(a, dynamic.Dynamic),
   key: a,
-  mapper: fn(b) -> Result(c, List(dynamic.DecodeError)),
+) -> Result(map.Map(dynamic.Dynamic, dynamic.Dynamic), error.ShimmerError) {
+  try dyn =
+    map
+    |> map.get(key)
+    |> result.map_error(error.NilMapEntry)
+
+  try safe =
+    dyn
+    |> dynamic.map(dynamic.dynamic, dynamic.dynamic)
+    |> result.map_error(error.InvalidDynamicList)
+
+  Ok(safe)
+}
+
+pub fn get_field_safe(
+  map: map.Map(a, dynamic.Dynamic),
+  key: a,
+  decoder: dynamic.Decoder(c),
 ) -> Result(c, error.ShimmerError) {
   try dyn =
     map
@@ -19,7 +36,7 @@ pub fn get_field_safe(
     |> result.map_error(error.NilMapEntry)
   try safe =
     dyn
-    |> mapper
+    |> decoder
     |> result.map_error(error.InvalidDynamicList)
 
   Ok(safe)
