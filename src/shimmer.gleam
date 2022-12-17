@@ -26,12 +26,9 @@ pub fn new_with_opts(
   handler_builder: handlers.HandlersBuilder,
   opts: ClientOptions,
 ) -> Client {
-  Client(
-    token: token,
-    handlers: handler_builder
-    |> handlers.handlers_from_builder,
-    intents: opts.intents,
-  )
+  let default = new(token, handler_builder)
+
+  Client(..default, intents: opts.intents)
 }
 
 /// Opens a websocket connection to the Discord Gateway. Passes this off to an actor to listen to messages.
