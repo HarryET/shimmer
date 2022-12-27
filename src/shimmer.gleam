@@ -52,6 +52,5 @@ pub fn connect(
     actor.start_spec(actor_spec)
     |> result.map_error(error.ActorError)
 
-  // TODO return type/subject so that messages can be sent to the actor
   Ok(client)
 }
