@@ -43,9 +43,11 @@ pub type ActorState {
   )
 }
 
-pub fn actor_setup(client: Client) -> fn() -> InitResult(ActorState, Message) {
+pub fn actor_setup(
+  client: Client(Message),
+) -> fn() -> InitResult(ActorState, Message) {
   fn() {
-    let setup = fn(inner_client: Client) {
+    let setup = fn(inner_client: Client(Message)) {
       // 1. Fetch Websocket URL for Bot
       try gateway_settings =
         endpoints.bot_gateway(inner_client.token)
@@ -63,6 +65,7 @@ pub fn actor_setup(client: Client) -> fn() -> InitResult(ActorState, Message) {
       let to_self_subject = process.new_subject()
       let selector =
         process.new_selector()
+        |> process.selecting(inner_client.to_self, fn(a) { a })
         |> process.selecting(to_self_subject, fn(a) { a })
         |> process.selecting_record4(
           atom.create_from_string("gun_ws"),
