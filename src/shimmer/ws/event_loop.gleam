@@ -1,7 +1,6 @@
 import shimmer/internal/network/websocket.{Connection}
 import shimmer/client.{Client}
 import gleam/otp/actor.{InitResult, Next}
-import shimmer/http/endpoints
 import shimmer/internal/erl/uri
 import gleam/io
 import gleam/result
@@ -40,12 +39,21 @@ pub type GatewaySession {
   GatewaySession(session_id: String, resume_gateway_url: String)
 }
 
+pub type ShardingMeta {
+  ShardingMeta(
+    to_all_clients: Subject(Message),
+    shard_id: Int,
+    total_shards: Int,
+  )
+}
+
 pub type ActorState {
   ActorState(
     heartbeat_interval: Int,
     sequence: Int,
     conn: Connection,
     meta: WebsocketMeta,
+    sharding: ShardingMeta,
     selector: Selector(Message),
     subject: Subject(Message),
     session: Option(GatewaySession),
@@ -54,18 +62,13 @@ pub type ActorState {
 
 pub fn actor_setup(
   client: Client(Message),
+  gateway_url: String,
   handlers: Handlers(Message),
+  sharding: Option(ShardingMeta),
 ) -> fn() -> InitResult(ActorState, Message) {
   fn() {
     let setup = fn(inner_client: Client(Message)) {
-      // 1. Fetch Websocket URL for Bot
-      try gateway_settings =
-        endpoints.bot_gateway(inner_client.token)
-        |> result.replace_error(actor.Failed(
-          "Couldn't get bot gateway information",
-        ))
-
-      let url = uri.parse(gateway_settings.url)
+      let url = uri.parse(gateway_url)
 
       // 2. Open Websocket
       try conn =
@@ -96,6 +99,12 @@ pub fn actor_setup(
             intents: inner_client.intents,
             handlers: handlers,
           ),
+          sharding: sharding
+          |> option.unwrap(or: ShardingMeta(
+            to_all_clients: to_self_subject,
+            shard_id: 1,
+            total_shards: 1,
+          )),
           selector: selector,
           subject: to_self_subject,
           session: None,
@@ -187,6 +196,8 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
                 identify.IdentifyPacketData(
                   token: state.meta.token,
                   intents: state.meta.intents,
+                  shard_id: state.sharding.shard_id,
+                  total_shards: state.sharding.total_shards,
                 )
                 |> identify.to_etf,
               )

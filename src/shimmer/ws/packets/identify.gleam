@@ -3,7 +3,12 @@ import gleam/map
 import gleam/erlang
 
 pub type IdentifyPacketData {
-  IdentifyPacketData(token: String, intents: Int)
+  IdentifyPacketData(
+    token: String,
+    intents: Int,
+    shard_id: Int,
+    total_shards: Int,
+  )
 }
 
 pub fn to_etf(data: IdentifyPacketData) -> BitString {
@@ -18,6 +23,7 @@ pub fn to_etf(data: IdentifyPacketData) -> BitString {
     map.new()
     |> map.insert("token", dynamic.from(data.token))
     |> map.insert("intents", dynamic.from(data.intents))
+    |> map.insert("shards", dynamic.from([data.shard_id, data.total_shards]))
     |> map.insert("properties", dynamic.from(properties))
 
   map.new()
