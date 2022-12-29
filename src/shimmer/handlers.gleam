@@ -6,9 +6,13 @@ import shimmer/ws/packets/ready.{ReadyPacket}
 
 pub type HandlersBuilder {
   HandlersBuilder(
+    /// When the bot is online and ready.
     on_ready: Option(fn(ReadyPacket) -> Nil),
+    /// When a new message is recieved.
     on_message: Option(fn(Message) -> Nil),
+    /// Send when the internal heartbeats are acknowlaged by the gateway.
     on_heartbeat_ack: Option(fn() -> Nil),
+    /// Called when the gateway connection is closed for any reason. The function is given the close code we recieved from discord.
     on_disconnect: Option(fn(String) -> Nil),
   )
 }
