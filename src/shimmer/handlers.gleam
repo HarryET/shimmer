@@ -9,6 +9,7 @@ pub type HandlersBuilder {
     on_ready: Option(fn(ReadyPacket) -> Nil),
     on_message: Option(fn(Message) -> Nil),
     on_heartbeat_ack: Option(fn() -> Nil),
+    on_disconnect: Option(fn(String) -> Nil),
   )
 }
 
@@ -17,6 +18,7 @@ pub type Handlers {
     on_ready: fn(ReadyPacket) -> Nil,
     on_message: fn(Message) -> Nil,
     on_heartbeat_ack: fn() -> Nil,
+    on_disconnect: fn(String) -> Nil,
   )
 }
 
@@ -43,10 +45,22 @@ pub fn on_heartbeat_ack(
   HandlersBuilder(..builder, on_heartbeat_ack: Some(f))
 }
 
+pub fn on_disconnect(
+  builder: HandlersBuilder,
+  f: fn(String) -> Nil,
+) -> HandlersBuilder {
+  HandlersBuilder(..builder, on_disconnect: Some(f))
+}
+
 // Utils
 
 pub fn new_builder() -> HandlersBuilder {
-  HandlersBuilder(on_ready: None, on_message: None, on_heartbeat_ack: None)
+  HandlersBuilder(
+    on_ready: None,
+    on_message: None,
+    on_heartbeat_ack: None,
+    on_disconnect: None,
+  )
 }
 
 pub fn handlers_from_builder(builder: HandlersBuilder) -> Handlers {
@@ -57,5 +71,7 @@ pub fn handlers_from_builder(builder: HandlersBuilder) -> Handlers {
     |> option.unwrap(or: fn(_) { Nil }),
     on_heartbeat_ack: builder.on_heartbeat_ack
     |> option.unwrap(or: fn() { Nil }),
+    on_disconnect: builder.on_disconnect
+    |> option.unwrap(or: fn(_) { Nil }),
   )
 }
