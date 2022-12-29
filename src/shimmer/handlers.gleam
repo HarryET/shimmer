@@ -13,7 +13,7 @@ pub type HandlersBuilder {
     /// Send when the internal heartbeats are acknowlaged by the gateway.
     on_heartbeat_ack: Option(fn() -> Nil),
     /// Called when the gateway connection is closed for any reason. The function is given the close code we recieved from discord.
-    on_disconnect: Option(fn(String) -> Nil),
+    on_disconnect: Option(fn(Int) -> Nil),
   )
 }
 
@@ -22,7 +22,7 @@ pub type Handlers {
     on_ready: fn(ReadyPacket) -> Nil,
     on_message: fn(Message) -> Nil,
     on_heartbeat_ack: fn() -> Nil,
-    on_disconnect: fn(String) -> Nil,
+    on_disconnect: fn(Int) -> Nil,
   )
 }
 
@@ -51,7 +51,7 @@ pub fn on_heartbeat_ack(
 
 pub fn on_disconnect(
   builder: HandlersBuilder,
-  f: fn(String) -> Nil,
+  f: fn(Int) -> Nil,
 ) -> HandlersBuilder {
   HandlersBuilder(..builder, on_disconnect: Some(f))
 }

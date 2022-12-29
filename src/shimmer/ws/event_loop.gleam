@@ -188,6 +188,7 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
         ]
         |> string.join(with: ""),
       )
+      state.meta.handlers.on_disconnect(code)
       actor.Stop(process.Abnormal(message))
     }
     Beat -> {
