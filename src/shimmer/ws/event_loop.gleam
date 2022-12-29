@@ -7,7 +7,7 @@ import gleam/io
 import gleam/result
 import gleam/erlang/atom
 import gleam/erlang/process.{Selector, Subject}
-import gleam/option.{Option, Some}
+import gleam/option.{None, Option, Some}
 import shimmer/ws/packet
 import gleam/dynamic
 import shimmer/ws/packets/hello
@@ -32,6 +32,10 @@ pub type WebsocketMeta {
   WebsocketMeta(token: String, intents: Int, handlers: Handlers)
 }
 
+pub type GatewaySession {
+  GatewaySession(session_id: String, resume_gateway_url: String)
+}
+
 pub type ActorState {
   ActorState(
     heartbeat_interval: Int,
@@ -40,6 +44,7 @@ pub type ActorState {
     meta: WebsocketMeta,
     selector: Selector(Message),
     subject: Subject(Message),
+    session: Option(GatewaySession),
   )
 }
 
@@ -88,6 +93,7 @@ pub fn actor_setup(
           ),
           selector: selector,
           subject: to_self_subject,
+          session: None,
         ),
         selector,
       ))
@@ -109,7 +115,15 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
           case ready.from_map(data) {
             Ok(packet) -> {
               state.meta.handlers.on_ready(packet)
-              actor.Continue(update_state(seq, state))
+              actor.Continue(
+                ActorState(
+                  ..update_state(seq, state),
+                  session: Some(GatewaySession(
+                    session_id: packet.session_id,
+                    resume_gateway_url: packet.resume_gateway_url,
+                  )),
+                ),
+              )
             }
             _ ->
               // TODO handle errors better!
