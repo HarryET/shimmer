@@ -208,7 +208,7 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
       actor.Continue(state)
     }
     _ ->
-      actor.Stop(process.Abnormal("Heartbeat actor recieved unknown message"))
+      actor.Stop(process.Abnormal("event loop's actor recieved unknown message"))
   }
 }
 
