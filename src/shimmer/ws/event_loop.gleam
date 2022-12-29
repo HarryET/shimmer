@@ -19,10 +19,13 @@ import gleam/erlang
 import gleam/int
 import gleam/string
 import shimmer/handlers.{Handlers}
+import shimmer/types/presence.{Presence}
 
 pub type Message {
   /// Frames from Gun
   WebsocketFrame(websocket.Frame)
+  /// Send a request to update the Bot's presence
+  UpdatePresence(Presence)
   /// Heartbeat Message Only
   Beat
   /// Kill the Actor
@@ -204,6 +207,20 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
       )
       state.meta.handlers.on_disconnect(code)
       actor.Stop(process.Abnormal(message))
+    }
+    UpdatePresence(new_presence) -> {
+      let payload =
+        map.new()
+        |> map.insert("op", dynamic.from(3))
+        |> map.insert(
+          "d",
+          new_presence
+          |> presence.to_map
+          |> dynamic.from,
+        )
+        |> erlang.term_to_binary
+      websocket.send(state.conn, payload)
+      actor.Continue(state)
     }
     Beat -> {
       let payload =

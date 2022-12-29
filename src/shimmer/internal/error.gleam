@@ -13,4 +13,6 @@ pub type ShimmerError {
   HttpError(hackney.Error)
   ActorError(actor.StartError)
   NilMapEntry(Nil)
+  /// Used when a builder dosen't have all of the properties it requires
+  BadBuilderProperties(String)
 }

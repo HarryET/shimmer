@@ -5,6 +5,8 @@ import gleam/erlang/process
 import shimmer/client.{Client}
 import gleam/result
 import shimmer/handlers
+import shimmer/types/presence.{Presence}
+import shimmer/builders/presence_builder.{PresenceBuilder}
 
 pub type ClientOptions {
   ClientOptions(intents: Int)
@@ -53,4 +55,27 @@ pub fn connect(
     |> result.map_error(error.ActorError)
 
   Ok(client)
+}
+
+/// Update the presence of the client, returns the client to be used for future operations
+/// > **Note** you must call `connect` before calling this function and do-not know if it has succeeded
+pub fn update_client_presence(
+  client: Client(event_loop.Message),
+  presence: Presence,
+) -> Client(event_loop.Message) {
+  client.to_self
+  |> process.send(event_loop.UpdatePresence(presence))
+
+  client
+}
+
+/// Update the presence of the client, returns the client to be used for future operations
+/// > **Note** you must call `connect` before calling this function and do-not know if it has succeeded
+/// Builds the presence from the builder and calls `update_client_presence`
+pub fn update_client_presence_from_builder(
+  client: Client(event_loop.Message),
+  builder: PresenceBuilder,
+) -> Result(Client(event_loop.Message), error.ShimmerError) {
+  try built_presence = presence_builder.build(builder)
+  Ok(update_client_presence(client, built_presence))
 }

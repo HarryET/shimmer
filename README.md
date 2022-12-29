@@ -45,3 +45,41 @@ pub fn main() {
   process.sleep_forever()
 }
 ```
+
+## Supported Events
+- [x] Ready
+- [ ] Resumed
+- [ ] Channel Create
+- [ ] Channel Update
+- [ ] Channel Delete
+- [ ] Channel Pins Update
+- [ ] Guild Create
+- [ ] Guild Update
+- [ ] Guild Delete
+- [ ] Guild Ban Add
+- [ ] Guild Ban Remove
+- [ ] Guild Emoji Update
+- [ ] Guild Integrations Update
+- [ ] Guild Member Add
+- [ ] Guild Member Remove
+- [ ] Guild Member Update
+- [ ] Guild Members Chunk
+- [ ] Guild Role Create
+- [ ] Guild Role Update
+- [ ] Guild Role Delete
+- [ ] Invite Create
+- [ ] Invite Delete
+- [x] Message Create
+- [ ] Message Update
+- [ ] Message Delete
+- [ ] Message Delete Bulk
+- [ ] Message Reaction Add
+- [ ] Message Reaction Remove
+- [ ] Message Reaction Remove All
+- [ ] Message Reaction Remove Emoji
+- [ ] Presence Update
+- [ ] Typing Start
+- [ ] User Update
+- [ ] Voice State Update
+- [ ] Voice Server Update
+- [ ] Webhooks Update

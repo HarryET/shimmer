@@ -18,6 +18,7 @@ gleam_http = "~> 3.1"
 certifi = "~> 2.9"
 gleam_otp = "~> 0.5"
 gleam_erlang = "~> 0.17"
+gleam_bitwise = "~> 1.2"
 
 [dev-dependencies]
 gleeunit = "~> 0.5"
