@@ -1,5 +1,5 @@
 import gleam/option.{None, Option, Some}
-import shimmer/types/message.{Message}
+import shimmer/ws/packets/message_create.{MessageCreate}
 import shimmer/ws/packets/ready.{ReadyPacket}
 
 // Types
@@ -9,7 +9,7 @@ pub type HandlersBuilder {
     /// When the bot is online and ready.
     on_ready: Option(fn(ReadyPacket) -> Nil),
     /// When a new message is recieved.
-    on_message: Option(fn(Message) -> Nil),
+    on_message: Option(fn(MessageCreate) -> Nil),
     /// Send when the internal heartbeats are acknowlaged by the gateway.
     on_heartbeat_ack: Option(fn() -> Nil),
     /// Called when the gateway connection is closed for any reason. The function is given the close code we recieved from discord.
@@ -20,7 +20,7 @@ pub type HandlersBuilder {
 pub type Handlers {
   Handlers(
     on_ready: fn(ReadyPacket) -> Nil,
-    on_message: fn(Message) -> Nil,
+    on_message: fn(MessageCreate) -> Nil,
     on_heartbeat_ack: fn() -> Nil,
     on_disconnect: fn(Int) -> Nil,
   )
@@ -37,7 +37,7 @@ pub fn on_ready(
 
 pub fn on_message(
   builder: HandlersBuilder,
-  f: fn(Message) -> Nil,
+  f: fn(MessageCreate) -> Nil,
 ) -> HandlersBuilder {
   HandlersBuilder(..builder, on_message: Some(f))
 }

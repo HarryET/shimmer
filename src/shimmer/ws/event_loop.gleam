@@ -13,6 +13,7 @@ import gleam/dynamic
 import shimmer/ws/packets/hello
 import shimmer/ws/packets/ready
 import shimmer/ws/packets/identify
+import shimmer/ws/packets/message_create
 import gleam/map
 import gleam/erlang
 import gleam/int
@@ -132,6 +133,15 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
                   )),
                 ),
               )
+            }
+            Error(e) ->
+              internal_error_handler(update_state(seq, state), Error(e))
+          }
+        Ok(#(0, seq, Some("MESSAGE_CREATE"), Some(data))) ->
+          case message_create.from_map(data) {
+            Ok(packet) -> {
+              state.meta.handlers.on_message(packet)
+              actor.Continue(update_state(seq, state))
             }
             Error(e) ->
               internal_error_handler(update_state(seq, state), Error(e))
