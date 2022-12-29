@@ -15,8 +15,8 @@ pub fn main() {
     |> on_message(fn(message) { io.print("Message Received!") })
 
   let client =
-    shimmer.new("TOKEN", handlers)
-    |> shimmer.connect
+    shimmer.new("TOKEN")
+    |> shimmer.connect(handlers)
 
   erlang.sleep_forever()
 }

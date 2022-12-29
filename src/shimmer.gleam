@@ -13,14 +13,9 @@ pub type ClientOptions {
 }
 
 /// Create a new client with the defualt setup, reccomended for most users
-pub fn new(
-  token: String,
-  handler_builder: handlers.HandlersBuilder,
-) -> Client(event_loop.Message) {
+pub fn new(token: String) -> Client(event_loop.Message) {
   Client(
     token: token,
-    handlers: handler_builder
-    |> handlers.handlers_from_builder,
     // Default intents, all un-privalidged events
     intents: 3_243_773,
     to_self: process.new_subject(),
@@ -30,10 +25,9 @@ pub fn new(
 /// Create a new Shimmer Client with more control over the options
 pub fn new_with_opts(
   token: String,
-  handler_builder: handlers.HandlersBuilder,
   opts: ClientOptions,
 ) -> Client(event_loop.Message) {
-  let default = new(token, handler_builder)
+  let default = new(token)
 
   Client(..default, intents: opts.intents)
 }
@@ -41,10 +35,14 @@ pub fn new_with_opts(
 /// Opens a websocket connection to the Discord Gateway. Passes this off to an actor to listen to messages.
 pub fn connect(
   client: Client(event_loop.Message),
+  handlers_builder: handlers.HandlersBuilder(event_loop.Message),
 ) -> Result(Client(event_loop.Message), error.ShimmerError) {
   let actor_spec =
     Spec(
-      init: event_loop.actor_setup(client),
+      init: event_loop.actor_setup(
+        client,
+        handlers.handlers_from_builder(handlers_builder),
+      ),
       // 30 seconds
       init_timeout: 30 * 1000,
       loop: event_loop.actor_loop,

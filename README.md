@@ -39,8 +39,8 @@ pub fn main() {
     |> handlers.on_message(fn(_message) { io.print("Message Received!") })
 
   let client =
-    shimmer.new("TOKEN", handlers)
-    |> shimmer.connect
+    shimmer.new("TOKEN")
+    |> shimmer.connect(handlers)
 
   process.sleep_forever()
 }

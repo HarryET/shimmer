@@ -33,7 +33,7 @@ pub type Message {
 }
 
 pub type WebsocketMeta {
-  WebsocketMeta(token: String, intents: Int, handlers: Handlers)
+  WebsocketMeta(token: String, intents: Int, handlers: Handlers(Message))
 }
 
 pub type GatewaySession {
@@ -54,6 +54,7 @@ pub type ActorState {
 
 pub fn actor_setup(
   client: Client(Message),
+  handlers: Handlers(Message),
 ) -> fn() -> InitResult(ActorState, Message) {
   fn() {
     let setup = fn(inner_client: Client(Message)) {
@@ -93,7 +94,7 @@ pub fn actor_setup(
           meta: WebsocketMeta(
             token: inner_client.token,
             intents: inner_client.intents,
-            handlers: inner_client.handlers,
+            handlers: handlers,
           ),
           selector: selector,
           subject: to_self_subject,
@@ -126,7 +127,14 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
         Ok(#(0, seq, Some("READY"), Some(data))) ->
           case ready.from_map(data) {
             Ok(packet) -> {
-              state.meta.handlers.on_ready(packet)
+              state.meta.handlers.on_ready(
+                packet,
+                Client(
+                  token: state.meta.token,
+                  intents: state.meta.intents,
+                  to_self: state.subject,
+                ),
+              )
               actor.Continue(
                 ActorState(
                   ..update_state(seq, state),
@@ -143,7 +151,14 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
         Ok(#(0, seq, Some("MESSAGE_CREATE"), Some(data))) ->
           case message_create.from_map(data) {
             Ok(packet) -> {
-              state.meta.handlers.on_message(packet)
+              state.meta.handlers.on_message(
+                packet,
+                Client(
+                  token: state.meta.token,
+                  intents: state.meta.intents,
+                  to_self: state.subject,
+                ),
+              )
               actor.Continue(update_state(seq, state))
             }
             Error(e) ->
@@ -187,7 +202,11 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
           }
         // Heartbeat Ack
         Ok(#(11, seq, _, _)) -> {
-          state.meta.handlers.on_heartbeat_ack()
+          state.meta.handlers.on_heartbeat_ack(Client(
+            token: state.meta.token,
+            intents: state.meta.intents,
+            to_self: state.subject,
+          ))
           actor.Continue(update_state(seq, state))
         }
         Ok(#(_, seq, _, _)) -> actor.Continue(update_state(seq, state))
@@ -207,7 +226,14 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
         ]
         |> string.join(with: ""),
       )
-      state.meta.handlers.on_disconnect(code)
+      state.meta.handlers.on_disconnect(
+        code,
+        Client(
+          token: state.meta.token,
+          intents: state.meta.intents,
+          to_self: state.subject,
+        ),
+      )
       actor.Stop(process.Abnormal(message))
     }
     UpdatePresence(new_presence) -> {
