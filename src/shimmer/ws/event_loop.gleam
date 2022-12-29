@@ -190,7 +190,9 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
           state.meta.handlers.on_heartbeat_ack()
           actor.Continue(update_state(seq, state))
         }
+        Ok(#(_, seq, _, _)) -> actor.Continue(update_state(seq, state))
         Error(e) -> internal_error_handler(state, Error(e))
+        _ -> actor.Continue(state)
       }
     }
     WebsocketFrame(websocket.Close(code, message)) -> {
