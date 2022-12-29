@@ -8,7 +8,7 @@ A Gleam library for interacting with the Discord API
 ## Basic Example
 
 ```
-shimmer = "~> 0.0.4"
+shimmer = "~> 0.0.5"
 gleam_stdlib = "~> 0.25"
 gleam_erlang = "~> 0.17"
 ```
