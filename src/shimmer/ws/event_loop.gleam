@@ -106,6 +106,14 @@ pub fn actor_setup(
   }
 }
 
+fn internal_error_handler(
+  state: ActorState,
+  _error: Result(a, b),
+) -> Next(ActorState) {
+  // TODO actually handle errors
+  actor.Continue(state)
+}
+
 pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
   case msg {
     WebsocketFrame(websocket.Binary(etf_bitstring)) -> {
@@ -125,9 +133,8 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
                 ),
               )
             }
-            _ ->
-              // TODO handle errors better!
-              actor.Continue(update_state(seq, state))
+            Error(e) ->
+              internal_error_handler(update_state(seq, state), Error(e))
           }
         // Hello
         Ok(#(10, seq, _, Some(data))) ->
@@ -162,18 +169,15 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
               )
               actor.Continue(new_state)
             }
-            _ ->
-              // TODO handle errors better!
-              actor.Continue(update_state(seq, state))
+            Error(e) ->
+              internal_error_handler(update_state(seq, state), Error(e))
           }
         // Heartbeat Ack
         Ok(#(11, seq, _, _)) -> {
           state.meta.handlers.on_heartbeat_ack()
           actor.Continue(update_state(seq, state))
         }
-        _ ->
-          // TODO handle errors better!
-          actor.Continue(state)
+        Error(e) -> internal_error_handler(state, Error(e))
       }
     }
     WebsocketFrame(websocket.Close(code, message)) -> {
