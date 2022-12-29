@@ -1,2 +1,3 @@
-gleam 0.25.1
 erlang 25.2
+gleam 0.25.3
+rebar 3.20.0
