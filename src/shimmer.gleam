@@ -20,7 +20,7 @@ pub fn new(
     handlers: handler_builder
     |> handlers.handlers_from_builder,
     // Default intents, all un-privalidged events
-    intents: 3243773,
+    intents: 3_243_773,
     to_self: process.new_subject(),
   )
 }
