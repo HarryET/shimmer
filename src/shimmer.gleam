@@ -3,13 +3,12 @@ import shimmer/ws/event_loop
 import gleam/otp/actor
 import gleam/otp/supervisor
 import gleam/erlang/process
-import shimmer/client.{Client}
+import shimmer/client.{Client, Shard}
 import gleam/result
 import shimmer/handlers
 import shimmer/types/presence.{Presence}
 import shimmer/builders/presence_builder.{PresenceBuilder}
 import shimmer/shards.{ShardsManager}
-import gleam/option.{None, Some}
 import shimmer/http/endpoints
 import shimmer/internal/types/responses/bot_gateway.{BotGatewayResponse}
 
@@ -19,11 +18,14 @@ pub type ClientOptions {
 
 /// Create a new client with the defualt setup, reccomended for most users
 pub fn new(token: String) -> Client(event_loop.Message) {
+  let subject = process.new_subject()
+
   Client(
     token: token,
     // Default intents, all un-privalidged events
     intents: 3_243_773,
-    to_self: process.new_subject(),
+    to_self: subject,
+    shard: Shard(id: 0, total: 1, to_all: subject),
   )
 }
 
@@ -71,7 +73,6 @@ pub fn connect(
         client,
         gateway_settings.url,
         handlers.handlers_from_builder(handlers_builder),
-        None,
       ),
       // 30 seconds
       init_timeout: 30 * 1000,
@@ -103,14 +104,10 @@ fn add_child(
             token: shards.token,
             intents: shards.intents,
             to_self: process.new_subject(),
+            shard: Shard(id: current_n, total: max_n, to_all: shards.to_clients),
           ),
           gateway_settings.url,
           client_handlers,
-          Some(event_loop.ShardingMeta(
-            to_all_clients: shards.to_clients,
-            shard_id: current_n,
-            total_shards: max_n,
-          )),
         ),
         // 30 seconds
         init_timeout: 30 * 1000,

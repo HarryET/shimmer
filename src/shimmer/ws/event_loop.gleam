@@ -1,5 +1,5 @@
 import shimmer/internal/network/websocket.{Connection}
-import shimmer/client.{Client}
+import shimmer/client.{Client, Shard}
 import gleam/otp/actor.{InitResult, Next}
 import shimmer/internal/erl/uri
 import gleam/io
@@ -19,6 +19,7 @@ import gleam/int
 import gleam/string
 import shimmer/handlers.{Handlers}
 import shimmer/types/presence.{Presence}
+import shimmer/internal/error
 
 pub type Message {
   /// Frames from Gun
@@ -39,23 +40,15 @@ pub type GatewaySession {
   GatewaySession(session_id: String, resume_gateway_url: String)
 }
 
-pub type ShardingMeta {
-  ShardingMeta(
-    to_all_clients: Subject(Message),
-    shard_id: Int,
-    total_shards: Int,
-  )
-}
-
 pub type ActorState {
   ActorState(
     heartbeat_interval: Int,
     sequence: Int,
     conn: Connection,
     meta: WebsocketMeta,
-    sharding: ShardingMeta,
     selector: Selector(Message),
     subject: Subject(Message),
+    shard: Shard(Message),
     session: Option(GatewaySession),
   )
 }
@@ -64,7 +57,6 @@ pub fn actor_setup(
   client: Client(Message),
   gateway_url: String,
   handlers: Handlers(Message),
-  sharding: Option(ShardingMeta),
 ) -> fn() -> InitResult(ActorState, Message) {
   fn() {
     let setup = fn(inner_client: Client(Message)) {
@@ -99,14 +91,9 @@ pub fn actor_setup(
             intents: inner_client.intents,
             handlers: handlers,
           ),
-          sharding: sharding
-          |> option.unwrap(or: ShardingMeta(
-            to_all_clients: to_self_subject,
-            shard_id: 1,
-            total_shards: 1,
-          )),
           selector: selector,
           subject: to_self_subject,
+          shard: inner_client.shard,
           session: None,
         ),
         selector,
@@ -122,13 +109,21 @@ pub fn actor_setup(
 
 fn internal_error_handler(
   state: ActorState,
-  _error: Result(a, b),
+  _error: Result(a, error.ShimmerError),
 ) -> Next(ActorState) {
   // TODO actually handle errors
   actor.Continue(state)
 }
 
 pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
+  let client =
+    Client(
+      token: state.meta.token,
+      intents: state.meta.intents,
+      to_self: state.subject,
+      shard: state.shard,
+    )
+
   case msg {
     WebsocketFrame(websocket.Binary(etf_bitstring)) -> {
       let dynamic_payload = parse_etf(etf_bitstring)
@@ -136,14 +131,7 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
         Ok(#(0, seq, Some("READY"), Some(data))) ->
           case ready.from_map(data) {
             Ok(packet) -> {
-              state.meta.handlers.on_ready(
-                packet,
-                Client(
-                  token: state.meta.token,
-                  intents: state.meta.intents,
-                  to_self: state.subject,
-                ),
-              )
+              state.meta.handlers.on_ready(packet, client)
               actor.Continue(
                 ActorState(
                   ..update_state(seq, state),
@@ -160,14 +148,7 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
         Ok(#(0, seq, Some("MESSAGE_CREATE"), Some(data))) ->
           case message_create.from_map(data) {
             Ok(packet) -> {
-              state.meta.handlers.on_message(
-                packet,
-                Client(
-                  token: state.meta.token,
-                  intents: state.meta.intents,
-                  to_self: state.subject,
-                ),
-              )
+              state.meta.handlers.on_message(packet, client)
               actor.Continue(update_state(seq, state))
             }
             Error(e) ->
@@ -196,8 +177,8 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
                 identify.IdentifyPacketData(
                   token: state.meta.token,
                   intents: state.meta.intents,
-                  shard_id: state.sharding.shard_id,
-                  total_shards: state.sharding.total_shards,
+                  shard_id: state.shard.id,
+                  total_shards: state.shard.total,
                 )
                 |> identify.to_etf,
               )
@@ -213,11 +194,7 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
           }
         // Heartbeat Ack
         Ok(#(11, seq, _, _)) -> {
-          state.meta.handlers.on_heartbeat_ack(Client(
-            token: state.meta.token,
-            intents: state.meta.intents,
-            to_self: state.subject,
-          ))
+          state.meta.handlers.on_heartbeat_ack(client)
           actor.Continue(update_state(seq, state))
         }
         Ok(#(_, seq, _, _)) -> actor.Continue(update_state(seq, state))
@@ -237,14 +214,7 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
         ]
         |> string.join(with: ""),
       )
-      state.meta.handlers.on_disconnect(
-        code,
-        Client(
-          token: state.meta.token,
-          intents: state.meta.intents,
-          to_self: state.subject,
-        ),
-      )
+      state.meta.handlers.on_disconnect(code, client)
       actor.Stop(process.Abnormal(message))
     }
     UpdatePresence(new_presence) -> {
