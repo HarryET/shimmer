@@ -4,6 +4,7 @@ import gleam/otp/actor
 import gleam/otp/supervisor
 import gleam/erlang/process
 import shimmer/client.{Client, Shard}
+import shimmer/intents.{Intent}
 import gleam/result
 import shimmer/handlers
 import shimmer/types/presence.{Presence}
@@ -13,7 +14,7 @@ import shimmer/http/endpoints
 import shimmer/internal/types/responses/bot_gateway.{BotGatewayResponse}
 
 pub type ClientOptions {
-  ClientOptions(intents: Int)
+  ClientOptions(intents: List(Intent))
 }
 
 /// Create a new client with the defualt setup, reccomended for most users
@@ -22,8 +23,7 @@ pub fn new(token: String) -> Client(event_loop.Message) {
 
   Client(
     token: token,
-    // Default intents, all un-privalidged events
-    intents: 3_243_773,
+    intents: intents.default(),
     to_self: subject,
     shard: Shard(id: 0, total: 1, to_all: subject),
   )
@@ -43,8 +43,7 @@ pub fn new_with_opts(
 pub fn new_sharded(token: String) -> ShardsManager(event_loop.Message) {
   ShardsManager(
     token: token,
-    // Default intents, all un-privalidged events
-    intents: 3_243_773,
+    intents: intents.default(),
     to_clients: process.new_subject(),
     clients: [],
   )

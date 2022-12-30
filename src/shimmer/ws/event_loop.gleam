@@ -1,5 +1,6 @@
 import shimmer/internal/network/websocket.{Connection}
 import shimmer/client.{Client, Shard}
+import shimmer/intents.{Intent}
 import gleam/otp/actor.{InitResult, Next}
 import shimmer/internal/erl/uri
 import gleam/io
@@ -33,7 +34,11 @@ pub type Message {
 }
 
 pub type WebsocketMeta {
-  WebsocketMeta(token: String, intents: Int, handlers: Handlers(Message))
+  WebsocketMeta(
+    token: String,
+    intents: List(Intent),
+    handlers: Handlers(Message),
+  )
 }
 
 pub type GatewaySession {
@@ -176,7 +181,7 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
                 new_state.conn,
                 identify.IdentifyPacketData(
                   token: state.meta.token,
-                  intents: state.meta.intents,
+                  intents: intents.intents_to_int(state.meta.intents),
                   shard_id: state.shard.id,
                   total_shards: state.shard.total,
                 )
