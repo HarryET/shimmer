@@ -94,27 +94,32 @@ fn add_child(
   current_n: Int,
   max_n: Int,
 ) -> supervisor.Children(a) {
-  children
-  |> supervisor.add(supervisor.worker(fn(_name) {
-    let actor_spec =
-      actor.Spec(
-        init: event_loop.actor_setup(
-          Client(
-            token: shards.token,
-            intents: shards.intents,
-            to_self: process.new_subject(),
-            shard: Shard(id: current_n, total: max_n, to_all: shards.to_clients),
+  let children =
+    children
+    |> supervisor.add(supervisor.worker(fn(_name) {
+      let actor_spec =
+        actor.Spec(
+          init: event_loop.actor_setup(
+            Client(
+              token: shards.token,
+              intents: shards.intents,
+              to_self: process.new_subject(),
+              shard: Shard(
+                id: current_n,
+                total: max_n,
+                to_all: shards.to_clients,
+              ),
+            ),
+            gateway_settings.url,
+            client_handlers,
           ),
-          gateway_settings.url,
-          client_handlers,
-        ),
-        // 30 seconds
-        init_timeout: 30 * 1000,
-        loop: event_loop.actor_loop,
-      )
+          // 30 seconds
+          init_timeout: 30 * 1000,
+          loop: event_loop.actor_loop,
+        )
 
-    actor.start_spec(actor_spec)
-  }))
+      actor.start_spec(actor_spec)
+    }))
 
   let add_more = current_n + 1 > max_n
   case add_more {
