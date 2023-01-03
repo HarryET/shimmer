@@ -156,7 +156,7 @@ pub fn connect_sharded(
           gateway_settings,
           client_handlers,
           children,
-          1,
+          0,
           gateway_settings.shards,
         )
       },

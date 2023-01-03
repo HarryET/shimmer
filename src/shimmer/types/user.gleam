@@ -5,6 +5,7 @@ import shimmer/internal/error
 import gleam/option.{Option}
 import gleam/json
 import gleam/result
+import shimmer/snowflake.{Snowflake}
 
 pub type User {
   User(
@@ -13,7 +14,7 @@ pub type User {
     discriminator: String,
     email: Option(String),
     flags: Int,
-    id: Int,
+    id: Snowflake,
     mfa_enabled: Bool,
     username: String,
     verified: Bool,
@@ -45,7 +46,7 @@ pub fn from_map(
 
   try id =
     map
-    |> get_field_safe(dyn_atom("id"), dynamic.int)
+    |> get_field_safe(dyn_atom("id"), snowflake.from_dynamic)
 
   try mfa_enabled =
     map
@@ -81,7 +82,7 @@ pub fn from_json_string(encoded: String) -> Result(User, error.ShimmerError) {
       field("discriminator", of: dynamic.string),
       field("email", of: dynamic.optional(dynamic.string)),
       field("flags", of: dynamic.int),
-      field("id", of: dynamic.int),
+      field("id", of: snowflake.from_dynamic),
       field("mfa_enabled", of: dynamic.bool),
       field("username", of: dynamic.string),
       field("verified", of: dynamic.bool),

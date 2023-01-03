@@ -114,9 +114,10 @@ pub fn actor_setup(
 
 fn internal_error_handler(
   state: ActorState,
-  _error: Result(a, error.ShimmerError),
+  error: Result(a, error.ShimmerError),
 ) -> Next(ActorState) {
   // TODO actually handle errors
+  io.debug(error)
   actor.Continue(state)
 }
 

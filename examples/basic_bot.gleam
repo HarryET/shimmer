@@ -1,22 +1,23 @@
 import gleam/io
 import gleam/string
+import gleam/erlang/process
 import shimmer
-import shimmer.{on_message, on_ready}
+import shimmer/handlers.{on_message, on_ready}
 
 pub fn main() {
   let handlers =
-    shimmer.handlers_builder()
-    |> on_ready(fn(data) {
+    handlers.new_builder()
+    |> on_ready(fn(data, _client) {
       io.println(
         ["Logged in as ", data.user.username, " (", data.user.id, ")"]
         |> string.join(with: ""),
       )
     })
-    |> on_message(fn(message) { io.print("Message Received!") })
+    |> on_message(fn(_message, _client) { io.print("Message Received!") })
 
-  let client =
+  let _client =
     shimmer.new("TOKEN")
     |> shimmer.connect(handlers)
 
-  erlang.sleep_forever()
+  process.sleep_forever()
 }

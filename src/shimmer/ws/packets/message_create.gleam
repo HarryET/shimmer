@@ -2,9 +2,7 @@ import gleam/map
 import gleam/dynamic
 import gleam/list
 import gleam/option.{None, Option}
-import shimmer/internal/map_helpers.{
-  dyn_atom, get_field_safe, get_map_field_safe,
-}
+import shimmer/internal/map_helpers.{dyn_atom, get_field_safe}
 import shimmer/internal/error
 import shimmer/types/message.{Message}
 import shimmer/types/user.{User}
@@ -22,12 +20,12 @@ pub type MessageCreate {
 pub fn from_map(
   map: map.Map(dynamic.Dynamic, dynamic.Dynamic),
 ) -> Result(MessageCreate, error.ShimmerError) {
-  try message_map =
-    map
-    |> get_map_field_safe(dyn_atom("message"))
+  // try message_map =
+  //   map
+  //   |> get_map_field_safe(dyn_atom("message"))
 
   try message =
-    message_map
+    map
     |> message.from_map
 
   try guild_id =

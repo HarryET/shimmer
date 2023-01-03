@@ -1,10 +1,11 @@
 import gleam/map
 import gleam/dynamic
 import gleam/string
+import shimmer/snowflake.{Snowflake}
 
 pub type Emoji {
   UnicodeEmoji(emoji: String)
-  CustomEmoji(id: String, name: String, animated: Bool)
+  CustomEmoji(id: Snowflake, name: String, animated: Bool)
 }
 
 pub fn to_map(self: Emoji) -> map.Map(String, dynamic.Dynamic) {
