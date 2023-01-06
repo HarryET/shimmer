@@ -19,7 +19,7 @@ pub fn from_map(
 
   try user =
     user_map
-    |> user.from_map
+    |> user.from_map(dyn_atom)
 
   try session_id =
     map

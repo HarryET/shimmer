@@ -5,35 +5,24 @@ import gleam/erlang/os
 import gleam/result
 import shimmer
 import shimmer/handlers.{on_message, on_ready}
-import shimmer/builders/presence_activity_builder
-import shimmer/builders/presence_builder
-import shimmer/types/presence
 import shimmer/intents
+import gleam/option
 
 pub fn main() {
   let handlers =
     handlers.new_builder()
-    |> on_ready(fn(data, client) {
+    |> on_ready(fn(data, _client) {
       io.println(
         ["Logged in as ", data.user.username, " (", data.user.id, ")"]
         |> string.join(with: ""),
       )
-
-      assert Ok(presence) =
-        presence_builder.new()
-        |> presence_builder.add_activity_from_builder(presence_activity_builder.new(
-          "with Gleam!",
-          presence.Game,
-        ))
-
-      let _ =
-        client
-        |> shimmer.update_client_presence_from_builder(presence)
-
-      Nil
     })
-    |> on_message(fn(message, _client) {
-      io.debug(message)
+    |> on_message(fn(event, _client) {
+      let content =
+        event.message.content
+        |> option.unwrap(or: "nil")
+
+      io.println("New Message: " <> content)
       Nil
     })
 

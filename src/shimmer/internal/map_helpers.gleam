@@ -8,6 +8,10 @@ pub fn dyn_atom(val: String) -> dynamic.Dynamic {
   dynamic.from(atom.create_from_string(val))
 }
 
+pub fn dyn_key(val: String) -> dynamic.Dynamic {
+  dynamic.from(val)
+}
+
 pub fn get_map_field_safe(
   map: map.Map(a, dynamic.Dynamic),
   key: a,
