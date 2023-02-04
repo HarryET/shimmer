@@ -1,5 +1,5 @@
 name = "shimmer"
-version = "0.0.5"
+version = "0.0.6"
 
 licences = ["Apache-2.0"]
 description = "A Gleam library for interacting with the Discord API"

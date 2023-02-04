@@ -5,10 +5,13 @@ A Gleam library for interacting with the Discord API
 > **Warning**
 > This Library is pre-alpha and being worked on.
 
+## Talks
+- [FOSDEM 2023](https://fosdem.org/2023/schedule/event/beam_gleam_intro/) ([Harry Bairstow](https://github.com/HarryET))
+
 ## Basic Example
 
 ```
-shimmer = "~> 0.0.5"
+shimmer = "~> 0.0.6"
 gleam_stdlib = "~> 0.25"
 gleam_erlang = "~> 0.17"
 ```
@@ -24,7 +27,7 @@ import shimmer/handlers
 pub fn main() {
   let handlers =
     handlers.new_builder()
-    |> handlers.on_ready(fn(data) {
+    |> handlers.on_ready(fn(data, _client) {
       io.println(
         [
           "Logged in as ",
@@ -36,7 +39,7 @@ pub fn main() {
         |> string.join(with: ""),
       )
     })
-    |> handlers.on_message(fn(_message) { io.print("Message Received!") })
+    |> handlers.on_message(fn(message, _client) { io.print("Received: " <> message) })
 
   let client =
     shimmer.new("TOKEN")
