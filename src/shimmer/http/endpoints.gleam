@@ -1,6 +1,6 @@
 import gleam/result
 import gleam/hackney
-import gleam/http.{Get}
+import gleam/http.{Get, Post}
 import gleam/http/response
 import gleeunit/should
 import shimmer/types/user
@@ -38,4 +38,37 @@ pub fn bot_gateway(
   |> should.equal(Ok("application/json"))
 
   bot_gateway.from_json_string(resp.body)
+}
+
+pub fn send_message(
+  token: String,
+  channel_id: String,
+  content: String,
+) -> Result(Bool, error.ShimmerError) {
+  let json_body =
+    "
+    {
+      \"content\": " <> content <> "\"
+    }
+    "
+
+  let req =
+    request.new_with_auth(
+      Post,
+      "/channels/" <> channel_id <> "/messages",
+      token,
+    )
+    |> request.set_body(json_body)
+
+  // Send the HTTP request to the server
+  try _ =
+    hackney.send(req)
+    |> result.map_error(error.HttpError)
+
+  // TODO return new message e.g.
+  // resp
+  // |> response.get_header("content-type")
+  // |> should.equal(Ok("application/json"))
+  // message.from_json_string(resp.body)
+  Ok(True)
 }

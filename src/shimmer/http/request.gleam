@@ -21,3 +21,9 @@ pub fn new_with_auth(
     string.append(to: "Bot ", suffix: token),
   )
 }
+
+pub fn set_body(request: Request(String), body: String) -> Request(String) {
+  request
+  |> request.set_body(body)
+  |> request.prepend_header("content-type", "application/json")
+}
