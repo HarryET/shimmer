@@ -1,14 +1,12 @@
 import gleam/io
 import gleam/string
 import gleam/erlang/process
-import gleam/erlang/os
-import gleam/result
 import shimmer
 import shimmer/handlers.{on_message, on_ready}
 import shimmer/intents
 import gleam/option
 
-pub fn main() {
+pub fn main(token: String) {
   let handlers =
     handlers.new_builder()
     |> on_ready(fn(data, _client) {
@@ -25,10 +23,6 @@ pub fn main() {
       io.println("New Message: " <> content)
       Nil
     })
-
-  let token =
-    os.get_env("TEST_DISCORD_TOKEN")
-    |> result.unwrap(or: "set.a.token")
 
   let _client =
     shimmer.new_sharded_with_opts(
