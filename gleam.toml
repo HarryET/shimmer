@@ -10,9 +10,10 @@ links = [
 ]
 
 [dependencies]
-gleam_stdlib = "~> 0.25"
+gleam_stdlib = "~> 0.26"
 gleam_hackney = "~> 0.2"
 gleam_json = "~> 0.5"
+transparent_http = "~> 0.2"
 gun = "> 1.3.0 and < 3.0.0"
 gleam_http = "~> 3.1"
 certifi = "~> 2.9"

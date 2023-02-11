@@ -11,6 +11,7 @@ import shimmer/types/presence.{Presence}
 import shimmer/builders/presence_builder.{PresenceBuilder}
 import shimmer/shards.{ShardsManager}
 import shimmer/http/endpoints
+import shimmer/http
 import shimmer/internal/types/responses/bot_gateway.{BotGatewayResponse}
 
 pub type ClientOptions {
@@ -26,6 +27,7 @@ pub fn new(token: String) -> Client(event_loop.Message) {
     intents: intents.default(),
     to_self: subject,
     shard: Shard(id: 0, total: 1, to_all: subject),
+    http_client: http.new_client(token),
   )
 }
 
@@ -109,6 +111,7 @@ fn add_child(
                 total: max_n,
                 to_all: shards.to_clients,
               ),
+              http_client: http.new_client(shards.token),
             ),
             gateway_settings.url,
             client_handlers,

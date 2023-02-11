@@ -21,6 +21,7 @@ import gleam/string
 import shimmer/handlers.{Handlers}
 import shimmer/types/presence.{Presence}
 import shimmer/internal/error
+import shimmer/http
 
 pub type Message {
   /// Frames from Gun
@@ -128,6 +129,7 @@ pub fn actor_loop(msg: Message, state: ActorState) -> Next(ActorState) {
       intents: state.meta.intents,
       to_self: state.subject,
       shard: state.shard,
+      http_client: http.new_client(state.meta.token),
     )
 
   case msg {
